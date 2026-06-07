@@ -1,0 +1,32 @@
+**/__pycache__
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Model weights (train from source — see docs/adversarial_queries/01_training.md)
+query_vae_256/epoch_0/
+query_vae_256/*_epoch_0/
+query_vae_256/*.pt
+new_vae/checkpoints/
+new_vae/wandb_logs/
+*.safetensors
+
+# Query-decoder training outputs
+query_decoder_training/outputs/
+query_decoder_training/wandb/
+query_decoder_training/saved_models/
+
+# BO run logs
+lolbo_scripts/oracle_logs_abs/
+lolbo_scripts/oracle_logs_rel/
+
+# Oracle config (never commit production credentials)
+oracle/pg_celery_worker/oracle-config.json
+oracle/pg_celery_worker/pg_worker/oracle-config.json
+
+# Local data files
+*.db
+*.duckdb
+*.pkl
+wandb/

@@ -1,0 +1,63 @@
+start: aka_name_filtered | cast_info_filtered | char_name_filtered | info_type_filtered | name_filtered | person_info_filtered | role_type_filtered | title_filtered
+aka_name_filtered: aka_name_selector "(cast_info )"? "(char_name )"? "(info_type )"? "(name )"? "(person_info )"? "(role_type )"? "(title )"? 
+aka_name_selector: "(aka_name " aka_name_name_filter ")"  | "(aka_name " aka_name_imdb_index_filter ")"  | "(aka_name " aka_name_name_pcode_cf_filter ")"  | "(aka_name " aka_name_name_pcode_nf_filter ")"  | "(aka_name " aka_name_surname_pcode_filter ")"  | "(aka_name " aka_name_md5sum_filter ")" 
+aka_name_name_filter: "(name " strop ")" 
+aka_name_imdb_index_filter: "(imdb_index " strop ")" 
+aka_name_name_pcode_cf_filter: "(name_pcode_cf " strop ")" 
+aka_name_name_pcode_nf_filter: "(name_pcode_nf " strop ")" 
+aka_name_surname_pcode_filter: "(surname_pcode " strop ")" 
+aka_name_md5sum_filter: "(md5sum " strop ")" 
+
+cast_info_filtered: cast_info_selector "(aka_name )"? "(char_name )"? "(info_type )"? "(name )"? "(person_info )"? "(role_type )"? "(title )"? 
+cast_info_selector: "(cast_info " cast_info_note_filter ")"  | "(cast_info " cast_info_nr_order_filter ")" 
+cast_info_note_filter: "(note " strop ")" 
+cast_info_nr_order_filter: "(nr_order " intop " " intval ")" 
+
+char_name_filtered: char_name_selector "(aka_name )"? "(cast_info )"? "(info_type )"? "(name )"? "(person_info )"? "(role_type )"? "(title )"? 
+char_name_selector: "(char_name " char_name_name_filter ")"  | "(char_name " char_name_imdb_index_filter ")"  | "(char_name " char_name_name_pcode_nf_filter ")"  | "(char_name " char_name_surname_pcode_filter ")"  | "(char_name " char_name_md5sum_filter ")" 
+char_name_name_filter: "(name " strop ")" 
+char_name_imdb_index_filter: "(imdb_index " strop ")" 
+char_name_name_pcode_nf_filter: "(name_pcode_nf " strop ")" 
+char_name_surname_pcode_filter: "(surname_pcode " strop ")" 
+char_name_md5sum_filter: "(md5sum " strop ")" 
+
+info_type_filtered: info_type_selector "(aka_name )"? "(cast_info )"? "(char_name )"? "(name )"? "(person_info )"? "(role_type )"? "(title )"? 
+info_type_selector: "(info_type " info_type_info_filter ")" 
+info_type_info_filter: "(info " strop ")" 
+
+name_filtered: name_selector "(aka_name )"? "(cast_info )"? "(char_name )"? "(info_type )"? "(person_info )"? "(role_type )"? "(title )"? 
+name_selector: "(name " name_name_filter ")"  | "(name " name_imdb_index_filter ")"  | "(name " name_gender_filter ")"  | "(name " name_name_pcode_cf_filter ")"  | "(name " name_name_pcode_nf_filter ")"  | "(name " name_surname_pcode_filter ")"  | "(name " name_md5sum_filter ")" 
+name_name_filter: "(name " strop ")" 
+name_imdb_index_filter: "(imdb_index " strop ")" 
+name_gender_filter: "(gender " strop ")" 
+name_name_pcode_cf_filter: "(name_pcode_cf " strop ")" 
+name_name_pcode_nf_filter: "(name_pcode_nf " strop ")" 
+name_surname_pcode_filter: "(surname_pcode " strop ")" 
+name_md5sum_filter: "(md5sum " strop ")" 
+
+person_info_filtered: person_info_selector "(aka_name )"? "(cast_info )"? "(char_name )"? "(info_type )"? "(name )"? "(role_type )"? "(title )"? 
+person_info_selector: "(person_info " person_info_info_filter ")"  | "(person_info " person_info_note_filter ")" 
+person_info_info_filter: "(info " strop ")" 
+person_info_note_filter: "(note " strop ")" 
+
+role_type_filtered: role_type_selector "(aka_name )"? "(cast_info )"? "(char_name )"? "(info_type )"? "(name )"? "(person_info )"? "(title )"? 
+role_type_selector: "(role_type " role_type_role_filter ")" 
+role_type_role_filter: "(role " strop ")" 
+
+title_filtered: title_selector "(aka_name )"? "(cast_info )"? "(char_name )"? "(info_type )"? "(name )"? "(person_info )"? "(role_type )"? 
+title_selector: "(title " title_title_filter ")"  | "(title " title_imdb_index_filter ")"  | "(title " title_production_year_filter ")"  | "(title " title_phonetic_code_filter ")"  | "(title " title_season_nr_filter ")"  | "(title " title_episode_nr_filter ")"  | "(title " title_series_years_filter ")"  | "(title " title_md5sum_filter ")" 
+title_title_filter: "(title " strop ")" 
+title_imdb_index_filter: "(imdb_index " strop ")" 
+title_production_year_filter: "(production_year " intop " " intval ")" 
+title_phonetic_code_filter: "(phonetic_code " strop ")" 
+title_season_nr_filter: "(season_nr " intop " " intval ")" 
+title_episode_nr_filter: "(episode_nr " intop " " intval ")" 
+title_series_years_filter: "(series_years " strop ")" 
+title_md5sum_filter: "(md5sum " strop ")" 
+
+
+intop: "<" | ">" | "=" | "!="
+strop: "most_popular" | "random"
+
+intval: "first" | "median" | "last" | "mode" | int int int int
+int: "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"

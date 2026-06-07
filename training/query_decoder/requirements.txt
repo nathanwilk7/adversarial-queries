@@ -1,0 +1,21 @@
+# Query-decoder LM finetuning requirements
+# ----------------------------------------
+# This is a SEPARATE environment from the adversarial-optimization Docker image:
+# fine-tuning uses torchtune's multi-GPU `tune run` launcher. Install into a
+# dedicated env. Production models were trained in a CUDA env with torch 2.8
+# (conda env "torch280") and Python 3.11+.
+
+torch>=2.5          # production runs used torch 2.8
+torchtune           # provides qwen2_5 model + tokenizer + the `tune` CLI launcher
+torchdata
+omegaconf           # torchtune config system
+
+# Data generation — scripts/embed_queries.py
+openai              # OpenAI text-embedding-3-large (256-dim) query embeddings
+polars
+pandas
+tqdm
+
+# Optional — experiment tracking (configs use torchtune's WandBLogger).
+# Remove the metric_logger block from the config to train without it.
+wandb

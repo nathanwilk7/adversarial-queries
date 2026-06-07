@@ -1,0 +1,18 @@
+{
+  "job_queue": {
+    "host": "localhost",
+    "port": 5432,
+    "database": "bayesopt",
+    "user": "bayesopt",
+    "password": "bayesopt"
+  },
+  "schemas": {
+    "JOB": "/home/jtao/phd/bayes-lqo/bayes_lqo/workload/adversarial-benchmark/imdb.duckdb",
+    "SQLStorm": "/home/jtao/phd/bayes-lqo/bayes_lqo/workload/adversarial-benchmark/sqlstorm.duckdb",
+    "JOB-Complex": "/home/jtao/phd/bayes-lqo/bayes_lqo/workload/job-complex/job-complex.duckdb",
+    "Stack": "/home/jtao/phd/bayes-lqo/bayes_lqo/workload/stack/stack.duckdb"
+  },
+  "worker": {
+    "hostname": "local-dev-worker"
+  }
+}

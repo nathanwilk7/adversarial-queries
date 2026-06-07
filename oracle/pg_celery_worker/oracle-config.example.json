@@ -1,0 +1,21 @@
+{
+  "_comment_job_queue": "PostgreSQL job queue connection settings",
+  "_comment_job_queue_host": "Use 'postgres' for Docker, 'localhost' for local dev, or remote host for production",
+  "job_queue": {
+    "host": "postgres",
+    "port": 5432,
+    "database": "bayesopt",
+    "user": "bayesopt",
+    "password": "bayesopt"
+  },
+  "_comment_schemas": "Schema name -> DuckDB file path mapping (paths inside container)",
+  "_comment_schemas_note": "Host paths are configured via DUCKDB_DATA_DIR in .env file",
+  "schemas": {
+    "JOB": "/data/duckdb/imdb.duckdb",
+    "SQLStorm": "/data/duckdb/stackoverflow.duckdb"
+  },
+  "_comment_worker": "Worker identification and settings",
+  "worker": {
+    "hostname": "local-docker-worker"
+  }
+}

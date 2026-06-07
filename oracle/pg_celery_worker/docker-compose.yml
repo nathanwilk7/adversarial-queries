@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  # PostgreSQL job queue database only
+  # Worker runs on host, not in Docker
+  postgres:
+    image: postgres:16
+    container_name: bayesopt-postgres-queue
+    network_mode: bridge
+    environment:
+      POSTGRES_USER: bayesopt
+      POSTGRES_PASSWORD: bayesopt
+      POSTGRES_DB: bayesopt
+      PGPORT: 5432
+    ports:
+      - "5432:5432"
+    volumes:
+      # Mount schema initialization scripts
+      - ./docker/postgres-init:/docker-entrypoint-initdb.d
+      # Persist PostgreSQL data
+      - postgres-queue-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bayesopt"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  postgres-queue-data:

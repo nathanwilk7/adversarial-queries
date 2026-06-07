@@ -1,0 +1,55 @@
+start: account_selector? answer_selector? badge_selector? comment_selector? post_link_selector? question_selector? site_selector? so_user_selector? tag_selector? tag_question_selector?
+
+account_selector: "(account )"
+
+answer_selector: "(answer " answer_creation_date_filter? answer_deletion_date_filter? answer_score_filter? answer_view_count_filter? answer_last_edit_date_filter? answer_last_activity_date_filter? ")"
+answer_creation_date_filter: "(creation_date " tsop " " tsval ")"
+answer_deletion_date_filter: "(deletion_date " tsop " " tsval ")"
+answer_score_filter: "(score " intop " " intval ")"
+answer_view_count_filter: "(view_count " intop " " intval ")"
+answer_last_edit_date_filter: "(last_edit_date " tsop " " tsval ")"
+answer_last_activity_date_filter: "(last_activity_date " tsop " " tsval ")"
+
+badge_selector: "(badge )"
+
+comment_selector: "(comment " comment_score_filter? comment_date_filter? ")"
+comment_score_filter: "(score " intop " " intval ")"
+comment_date_filter: "(date " tsop " " tsval ")"
+
+post_link_selector: "(post_link " post_link_link_type_filter? post_link_date_filter? ")"
+post_link_link_type_filter: "(link_type " intop " " intval ")"
+post_link_date_filter: "(date " tsop " " tsval ")"
+
+question_selector: "(question " question_creation_date_filter? question_deletion_date_filter? question_score_filter? question_view_count_filter? question_last_edit_date_filter? question_last_activity_date_filter? question_favorite_count_filter? question_closed_date_filter? ")"
+question_creation_date_filter: "(creation_date " tsop " " tsval ")"
+question_deletion_date_filter: "(deletion_date " tsop " " tsval ")"
+question_score_filter: "(score " intop " " intval ")"
+question_view_count_filter: "(view_count " intop " " intval ")"
+question_last_edit_date_filter: "(last_edit_date " tsop " " tsval ")"
+question_last_activity_date_filter: "(last_activity_date " tsop " " tsval ")"
+question_favorite_count_filter: "(favorite_count " intop " " intval ")"
+question_closed_date_filter: "(closed_date " tsop " " tsval ")"
+
+site_selector: "(site " site_site_name_filter? ")"
+site_site_name_filter: "(site_name \"" enumval_site_site_name "\")"
+
+so_user_selector: "(so_user " so_user_reputation_filter? so_user_creation_date_filter? so_user_last_access_date_filter? so_user_upvotes_filter? so_user_downvotes_filter? ")"
+so_user_reputation_filter: "(reputation " intop " " intval ")"
+so_user_creation_date_filter: "(creation_date " tsop " " tsval ")"
+so_user_last_access_date_filter: "(last_access_date " tsop " " tsval ")"
+so_user_upvotes_filter: "(upvotes " intop " " intval ")"
+so_user_downvotes_filter: "(downvotes " intop " " intval ")"
+
+tag_selector: "(tag )"
+
+tag_question_selector: "(tag_question )"
+
+intop: "<" | ">" | "=" | "!="
+
+intval: "first" | "median" | "last" | "mode" | int int int int
+int: "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+
+tsop: "t<" | "t>" | "t=" | "t!="
+tsval: "first" | "median" | "last" | int int int int
+
+enumval_site_site_name: "3dprinting" | "academia" | "ai" | "android" | "anime" | "apple" | "arduino" | "askubuntu" | "astronomy" | "aviation" | "avp" | "beer" | "bicycles" | "bioinformatics" | "biology" | "bitcoin" | "blender" | "boardgames" | "bricks" | "buddhism" | "chemistry" | "chess" | "chinese" | "christianity" | "civicrm" | "codegolf" | "codereview" | "coffee" | "cogsci" | "computergraphics" | "conlang" | "cooking" | "craftcms" | "crafts" | "crypto" | "cs" | "cseducators" | "cstheory" | "datascience" | "dba" | "devops" | "diy" | "drupal" | "dsp" | "earthscience" | "ebooks" | "economics" | "electronics" | "elementaryos" | "ell" | "emacs" | "engineering" | "english" | "eosio" | "es" | "esperanto" | "ethereum" | "expatriates" | "expressionengine" | "fitness" | "freelancing" | "french" | "gamedev" | "gaming" | "gardening" | "genealogy" | "german" | "gis" | "graphicdesign" | "ham" | "hardwarerecs" | "health" | "hermeneutics" | "hinduism" | "history" | "homebrew" | "hsm" | "interpersonal" | "iot" | "iota" | "islam" | "italian" | "ja" | "japanese" | "joomla" | "judaism" | "korean" | "languagelearning" | "latin" | "law" | "lifehacks" | "linguistics" | "literature" | "magento" | "martialarts" | "math" | "matheducators" | "mathematica" | "mathoverflow" | "mechanics" | "moderators" | "monero" | "money" | "movies" | "music" | "musicfans" | "mythology" | "networkengineering" | "opendata" | "opensource" | "or" | "outdoors" | "parenting" | "patents" | "pets" | "philosophy" | "photo" | "physics" | "pm" | "poker" | "politics" | "portuguese" | "pt" | "puzzling" | "quant" | "quantumcomputing" | "raspberrypi" | "retrocomputing" | "reverseengineering" | "robotics" | "rpg" | "ru" | "rus" | "russian" | "salesforce" | "scicomp" | "scifi" | "security" | "serverfault" | "sharepoint" | "sitecore" | "skeptics" | "softwareengineering" | "softwarerecs" | "sound" | "space" | "spanish" | "sports" | "sqa" | "stackapps" | "stackoverflow" | "stats" | "stellar" | "superuser" | "sustainability" | "tex" | "tezos" | "tor" | "travel" | "tridion" | "ukrainian" | "unix" | "ux" | "vegetarianism" | "vi" | "webapps" | "webmasters" | "windowsphone" | "woodworking" | "wordpress" | "workplace" | "worldbuilding" | "writers"

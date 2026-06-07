@@ -1,0 +1,165 @@
+{
+  "tables": [
+    {
+      "name": "site",
+      "columns": [
+        { "name": "site_id", "type": "int not null" },
+        { "name": "site_name", "type": "varchar" }
+      ],
+      "primary key": { "column": "site_id" }
+    },
+    {
+      "name": "account",
+      "columns": [
+        { "name": "id", "type": "int not null" },
+        { "name": "display_name", "type": "varchar" },
+        { "name": "location", "type": "varchar" },
+        { "name": "about_me", "type": "varchar" },
+        { "name": "website_url", "type": "varchar" }
+      ],
+      "primary key": { "column": "id" }
+    },
+    {
+      "name": "so_user",
+      "columns": [
+        { "name": "id", "type": "int not null" },
+        { "name": "site_id", "type": "int not null" },
+        { "name": "reputation", "type": "int" },
+        { "name": "creation_date", "type": "timestamp" },
+        { "name": "last_access_date", "type": "timestamp" },
+        { "name": "upvotes", "type": "int" },
+        { "name": "downvotes", "type": "int" },
+        { "name": "account_id", "type": "int" }
+      ],
+      "primary key": { "columns": ["id", "site_id"] },
+      "foreign keys": [
+        { "column": "site_id", "foreign table": "site", "foreign column": "site_id" },
+        { "column": "account_id", "foreign table": "account", "foreign column": "id" }
+      ]
+    },
+    {
+      "name": "question",
+      "columns": [
+        { "name": "id", "type": "int not null" },
+        { "name": "site_id", "type": "int not null" },
+        { "name": "accepted_answer_id", "type": "int" },
+        { "name": "creation_date", "type": "timestamp" },
+        { "name": "deletion_date", "type": "timestamp" },
+        { "name": "score", "type": "int" },
+        { "name": "view_count", "type": "int" },
+        { "name": "body", "type": "varchar" },
+        { "name": "owner_user_id", "type": "int" },
+        { "name": "last_editor_id", "type": "int" },
+        { "name": "last_edit_date", "type": "timestamp" },
+        { "name": "last_activity_date", "type": "timestamp" },
+        { "name": "title", "type": "varchar" },
+        { "name": "favorite_count", "type": "int" },
+        { "name": "closed_date", "type": "timestamp" },
+        { "name": "tagstring", "type": "varchar" }
+      ],
+      "primary key": { "columns": ["id", "site_id"] },
+      "foreign keys": [
+        { "column": "site_id", "foreign table": "site", "foreign column": "site_id" },
+        { "column": "site_id,owner_user_id", "foreign table": "so_user", "foreign column": "site_id,id" },
+        { "column": "site_id,last_editor_id", "foreign table": "so_user", "foreign column": "site_id,id" }
+      ]
+    },
+    {
+      "name": "answer",
+      "columns": [
+        { "name": "id", "type": "int not null" },
+        { "name": "site_id", "type": "int not null" },
+        { "name": "question_id", "type": "int" },
+        { "name": "creation_date", "type": "timestamp" },
+        { "name": "deletion_date", "type": "timestamp" },
+        { "name": "score", "type": "int" },
+        { "name": "view_count", "type": "int" },
+        { "name": "body", "type": "varchar" },
+        { "name": "owner_user_id", "type": "int" },
+        { "name": "last_editor_id", "type": "int" },
+        { "name": "last_edit_date", "type": "timestamp" },
+        { "name": "last_activity_date", "type": "timestamp" },
+        { "name": "title", "type": "varchar" }
+      ],
+      "primary key": { "columns": ["id", "site_id"] },
+      "foreign keys": [
+        { "column": "site_id", "foreign table": "site", "foreign column": "site_id" },
+        { "column": "site_id,owner_user_id", "foreign table": "so_user", "foreign column": "site_id,id" },
+        { "column": "site_id,last_editor_id", "foreign table": "so_user", "foreign column": "site_id,id" },
+        { "column": "site_id,question_id", "foreign table": "question", "foreign column": "site_id,id" }
+      ]
+    },
+    {
+      "name": "comment",
+      "columns": [
+        { "name": "id", "type": "int not null" },
+        { "name": "site_id", "type": "int not null" },
+        { "name": "post_id", "type": "int" },
+        { "name": "user_id", "type": "int" },
+        { "name": "score", "type": "int" },
+        { "name": "body", "type": "varchar" },
+        { "name": "date", "type": "timestamp" }
+      ],
+      "primary key": { "columns": ["id", "site_id"] },
+      "foreign keys": [
+        { "column": "site_id", "foreign table": "site", "foreign column": "site_id" }
+      ]
+    },
+    {
+      "name": "badge",
+      "columns": [
+        { "name": "site_id", "type": "int not null" },
+        { "name": "user_id", "type": "int not null" },
+        { "name": "name", "type": "varchar not null" },
+        { "name": "date", "type": "timestamp not null" }
+      ],
+      "primary key": { "columns": ["site_id", "user_id", "name", "date"] },
+      "foreign keys": [
+        { "column": "site_id", "foreign table": "site", "foreign column": "site_id" },
+        { "column": "site_id,user_id", "foreign table": "so_user", "foreign column": "site_id,id" }
+      ]
+    },
+    {
+      "name": "tag",
+      "columns": [
+        { "name": "id", "type": "int not null" },
+        { "name": "site_id", "type": "int not null" },
+        { "name": "name", "type": "varchar" }
+      ],
+      "primary key": { "columns": ["id", "site_id"] },
+      "foreign keys": [
+        { "column": "site_id", "foreign table": "site", "foreign column": "site_id" }
+      ]
+    },
+    {
+      "name": "tag_question",
+      "columns": [
+        { "name": "question_id", "type": "int not null" },
+        { "name": "tag_id", "type": "int not null" },
+        { "name": "site_id", "type": "int not null" }
+      ],
+      "primary key": { "columns": ["site_id", "question_id", "tag_id"] },
+      "foreign keys": [
+        { "column": "site_id", "foreign table": "site", "foreign column": "site_id" },
+        { "column": "site_id,tag_id", "foreign table": "tag", "foreign column": "site_id,id" },
+        { "column": "site_id,question_id", "foreign table": "question", "foreign column": "site_id,id" }
+      ]
+    },
+    {
+      "name": "post_link",
+      "columns": [
+        { "name": "site_id", "type": "int not null" },
+        { "name": "post_id_from", "type": "int not null" },
+        { "name": "post_id_to", "type": "int not null" },
+        { "name": "link_type", "type": "int not null" },
+        { "name": "date", "type": "timestamp" }
+      ],
+      "primary key": { "columns": ["site_id", "post_id_from", "post_id_to", "link_type"] },
+      "foreign keys": [
+        { "column": "site_id", "foreign table": "site", "foreign column": "site_id" },
+        { "column": "site_id,post_id_to", "foreign table": "question", "foreign column": "site_id,id" },
+        { "column": "site_id,post_id_from", "foreign table": "question", "foreign column": "site_id,id" }
+      ]
+    }
+  ]
+}

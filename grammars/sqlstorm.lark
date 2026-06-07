@@ -1,0 +1,113 @@
+// SQLStorm EBNF Grammar for Constrained Generation
+// Auto-generated from sqlstorm.dbschema.json
+// Note: CloseReasonTypes is excluded (isolated table with no FK relationships)
+
+start: badges_selector? comments_selector? linktypes_selector? posthistory_selector? posthistorytypes_selector? postlinks_selector? posts_selector? posttypes_selector? tags_selector? users_selector? votes_selector? votetypes_selector?
+
+// ============================================================================
+// Badges
+// ============================================================================
+badges_selector: "(Badges " badges_date_filter? badges_class_filter? ")"
+badges_date_filter: "(Date " tsop " " tsval ")"
+badges_class_filter: "(Class " intop " " intval ")"
+
+// ============================================================================
+// Comments
+// ============================================================================
+comments_selector: "(Comments " comments_score_filter? comments_creationdate_filter? comments_contentlicense_filter? ")"
+comments_score_filter: "(Score " intop " " intval ")"
+comments_creationdate_filter: "(CreationDate " tsop " " tsval ")"
+comments_contentlicense_filter: "(ContentLicense " comments_contentlicense_value ")"
+comments_contentlicense_value: "\"CC BY-SA 2.5\"" | "\"CC BY-SA 3.0\"" | "\"CC BY-SA 4.0\""
+
+// ============================================================================
+// LinkTypes
+// ============================================================================
+linktypes_selector: "(LinkTypes " linktypes_name_filter? ")"
+linktypes_name_filter: "(Name " linktypes_name_value ")"
+linktypes_name_value: "\"Duplicate\"" | "\"Linked\""
+
+// ============================================================================
+// PostHistory
+// ============================================================================
+posthistory_selector: "(PostHistory " posthistory_creationdate_filter? posthistory_contentlicense_filter? ")"
+posthistory_creationdate_filter: "(CreationDate " tsop " " tsval ")"
+posthistory_contentlicense_filter: "(ContentLicense " posthistory_contentlicense_value ")"
+posthistory_contentlicense_value: "\"CC BY-SA 2.5\"" | "\"CC BY-SA 3.0\"" | "\"CC BY-SA 4.0\""
+
+// ============================================================================
+// PostHistoryTypes
+// ============================================================================
+posthistorytypes_selector: "(PostHistoryTypes " posthistorytypes_name_filter? ")"
+posthistorytypes_name_filter: "(Name " posthistorytypes_name_value ")"
+posthistorytypes_name_value: "\"Community Owned\"" | "\"CommunityBump\"" | "\"CreatedFromWizard\"" | "\"Discussion moved to chat\"" | "\"Edit Body\"" | "\"Edit Tags\"" | "\"Edit Title\"" | "\"Initial Body\"" | "\"Initial Tags\"" | "\"Initial Title\"" | "\"Post Closed\"" | "\"Post Deleted\"" | "\"Post Locked\"" | "\"Post Merge Destination\"" | "\"Post Merge Source\"" | "\"Post Migrated\"" | "\"Post Migrated Away\"" | "\"Post Migrated Here\"" | "\"Post Notice Added\"" | "\"Post Notice Removed\"" | "\"Post Reopened\"" | "\"Post Tweeted\"" | "\"Post Undeleted\"" | "\"Post Unlocked\"" | "\"Question Merged\"" | "\"Question Protected\"" | "\"Question Unmerged\"" | "\"Question Unprotected\"" | "\"RemovedHotQuestion\"" | "\"Rollback Body\"" | "\"Rollback Tags\"" | "\"Rollback Title\"" | "\"SelectedHotQuestion\"" | "\"Suggested Edit Applied\""
+
+// ============================================================================
+// PostLinks
+// ============================================================================
+postlinks_selector: "(PostLinks " postlinks_creationdate_filter? ")"
+postlinks_creationdate_filter: "(CreationDate " tsop " " tsval ")"
+
+// ============================================================================
+// Posts
+// ============================================================================
+posts_selector: "(Posts " posts_creationdate_filter? posts_score_filter? posts_viewcount_filter? posts_lasteditdate_filter? posts_lastactivitydate_filter? posts_answercount_filter? posts_commentcount_filter? posts_closeddate_filter? posts_communityowneddate_filter? posts_contentlicense_filter? ")"
+posts_creationdate_filter: "(CreationDate " tsop " " tsval ")"
+posts_score_filter: "(Score " intop " " intval ")"
+posts_viewcount_filter: "(ViewCount " intop " " intval ")"
+posts_lasteditdate_filter: "(LastEditDate " tsop " " tsval ")"
+posts_lastactivitydate_filter: "(LastActivityDate " tsop " " tsval ")"
+posts_answercount_filter: "(AnswerCount " intop " " intval ")"
+posts_commentcount_filter: "(CommentCount " intop " " intval ")"
+posts_closeddate_filter: "(ClosedDate " tsop " " tsval ")"
+posts_communityowneddate_filter: "(CommunityOwnedDate " tsop " " tsval ")"
+posts_contentlicense_filter: "(ContentLicense " posts_contentlicense_value ")"
+posts_contentlicense_value: "\"CC BY-SA 2.5\"" | "\"CC BY-SA 3.0\"" | "\"CC BY-SA 4.0\""
+
+// ============================================================================
+// PostTypes
+// ============================================================================
+posttypes_selector: "(PostTypes " posttypes_name_filter? ")"
+posttypes_name_filter: "(Name " posttypes_name_value ")"
+posttypes_name_value: "\"Answer\"" | "\"ModeratorNomination\"" | "\"PrivilegeWiki\"" | "\"Question\"" | "\"TagWiki\"" | "\"TagWikiExcerpt\"" | "\"Wiki\"" | "\"WikiPlaceholder\""
+
+// ============================================================================
+// Tags
+// ============================================================================
+tags_selector: "(Tags " tags_count_filter? ")"
+tags_count_filter: "(Count " intop " " intval ")"
+
+// ============================================================================
+// Users
+// ============================================================================
+users_selector: "(Users " users_reputation_filter? users_creationdate_filter? users_lastaccessdate_filter? users_views_filter? users_upvotes_filter? users_downvotes_filter? ")"
+users_reputation_filter: "(Reputation " intop " " intval ")"
+users_creationdate_filter: "(CreationDate " tsop " " tsval ")"
+users_lastaccessdate_filter: "(LastAccessDate " tsop " " tsval ")"
+users_views_filter: "(Views " intop " " intval ")"
+users_upvotes_filter: "(UpVotes " intop " " intval ")"
+users_downvotes_filter: "(DownVotes " intop " " intval ")"
+
+// ============================================================================
+// Votes
+// ============================================================================
+votes_selector: "(Votes " votes_creationdate_filter? votes_bountyamount_filter? ")"
+votes_creationdate_filter: "(CreationDate " tsop " " tsval ")"
+votes_bountyamount_filter: "(BountyAmount " intop " " intval ")"
+
+// ============================================================================
+// VoteTypes
+// ============================================================================
+votetypes_selector: "(VoteTypes " votetypes_name_filter? ")"
+votetypes_name_filter: "(Name " votetypes_name_value ")"
+votetypes_name_value: "\"AcceptedByOriginator\"" | "\"ApproveEditSuggestion\"" | "\"Bookmark\"" | "\"BountyClose\"" | "\"BountyStart\"" | "\"Close\"" | "\"Deletion\"" | "\"DownMod\"" | "\"ModeratorReview\"" | "\"NominateModerator\"" | "\"Offensive\"" | "\"Reopen\"" | "\"Spam\"" | "\"Undeletion\"" | "\"UpMod\""
+
+// ============================================================================
+// Operators and Values
+// ============================================================================
+intop: "<" | ">" | "=" | "!="
+tsop: "t<" | "t>" | "t=" | "t!="
+
+intval: "first" | "median" | "last" | "mode" | int int int int
+tsval: "first" | "median" | "last" | int int int int
+int: "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"

@@ -1,0 +1,26 @@
+FROM python:3.13-slim
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Install Python dependencies
+# Using direct pip install since we need minimal dependencies for the worker
+RUN pip install --no-cache-dir \
+    'psycopg[binary]' \
+    psycopg2-binary \
+    duckdb \
+    pydantic
+
+# Copy only the necessary worker code
+# The worker only depends on: duckdb_worker.py, config.py, and contracts.py
+COPY pg_worker /app/pg_worker
+
+# Set Python path so we can import from pg_worker directly
+ENV PYTHONPATH=/app
+
+# Default command to run the DuckDB worker
+CMD ["python", "-m", "pg_worker.duckdb_worker"]
