@@ -22,8 +22,7 @@ from glom import glom
 
 from optimization.codec.codec import JoinTree, JoinTreeBranch, JoinTreeLeaf
 from logger.log import l
-from oracle.oracle import _default_plan
-from workload.workloads import WorkloadSpecDefinition
+from training.data.stack_workload import WorkloadSpecDefinition, default_plan
 
 
 class PlanHasEmptyResult(Exception):
@@ -737,7 +736,7 @@ def _identify_table_for_column(col: str, state: JoinTreeBuildState) -> str:
 
 def _query_has_column(query: WorkloadSpecDefinition, table: str, col: str) -> bool:
     """Check if the query references a column anywhere"""
-    parsed = sqlglot.parse_one(_default_plan(query))
+    parsed = sqlglot.parse_one(default_plan(query))
     for col_ref in parsed.find_all(sqlglot.expressions.Column):
         if col_ref.name == col and col_ref.table.startswith(table):
             return True
@@ -751,7 +750,7 @@ def _extract_non_join_predicates(
     Given a query, extract all of the non-join predicates and the columns
     they reference, which help identify table aliases
     """
-    default_query = _default_plan(query)
+    default_query = default_plan(query)
     parsed = sqlglot.parse_one(default_query)
     where = parsed.find(sqlglot.expressions.Where)
     if not where:

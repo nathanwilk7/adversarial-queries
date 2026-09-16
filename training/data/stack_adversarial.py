@@ -21,7 +21,7 @@ import typer
 from logger.log import l
 from training.data.duckdb_jointree import PlanHasEmptyResult, build_join_tree
 from training.data.storage import StackQuery
-from workload.workloads import WorkloadSchema, WorkloadSpecDefinition
+from training.data.stack_workload import WorkloadSchema, WorkloadSpecDefinition
 
 app = typer.Typer(no_args_is_help=True)
 
@@ -464,7 +464,7 @@ def _make_workload_spec(
 
 
 def collect_query_plans(num_queries: int) -> None:
-    db_path = Path(__file__).parent.parent / "workload/stack/stack.duckdb"
+    db_path = Path(__file__).resolve().parents[2] / "workload/stack/stack.duckdb"
     con = duckdb.connect(str(db_path), read_only=True)
 
     seen: set[str] = {r.query_string for r in StackQuery.select(StackQuery.query_string)}
@@ -647,7 +647,7 @@ def test():
     Generate and decode a few random queries and verify that every table
     present in the query also appears in the EXPLAIN plan and the JoinTree.
     """
-    db_path = Path(__file__).parent.parent / "workload/stack/stack.duckdb"
+    db_path = Path(__file__).resolve().parents[2] / "workload/stack/stack.duckdb"
     con = duckdb.connect(str(db_path), read_only=True)
 
     passed = 0
