@@ -392,7 +392,8 @@ class Optimize(object):
 
         # save all data collected during optimization 
         self.save_all_collected_data()
-        self.tracker.finish()
+        if self.tracker is not None:
+            self.tracker.finish()
 
         return self 
 

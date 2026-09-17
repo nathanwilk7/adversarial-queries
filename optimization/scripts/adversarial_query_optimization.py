@@ -96,6 +96,7 @@ class AdversarialQueryOptimization(Optimize):
             api_model_name=self.api_model_name,
             schema=self.schema,
             db_backend=self.db_backend,
+            timeout_ms=self.timeout_ms,
         )
 
         self.init_train_z = self.compute_train_zs()
@@ -211,7 +212,12 @@ class AdversarialQueryOptimization(Optimize):
 
         # Evaluate all via the oracle
         from optimization.objectives.your_objective_functions import OBJECTIVE_FUNCTIONS_DICT
-        oracle_obj = OBJECTIVE_FUNCTIONS_DICT[self.task_id](*self.task_specific_args, schema=self.schema)
+        oracle_obj = OBJECTIVE_FUNCTIONS_DICT[self.task_id](
+            *self.task_specific_args,
+            schema=self.schema,
+            db_backend=self.db_backend,
+            timeout_ms=self.timeout_ms,
+        )
         batch_size = 10
         all_scores = []
         all_censoring = []
@@ -293,14 +299,14 @@ class AdversarialQueryOptimization(Optimize):
             ds = row['default_status']
             gs = row['generated_status']
 
-            # Score must match what query_black_box() returns in the live oracle:
-            # - Both complete: _score(dt, gt) = dt/gt (positive ratio)
-            # - Default fails entirely (error/timeout): score = -dt (negative)
-            # - Default ok, generated fails: score = _score(dt, penalty) (small positive)
+            # Score must match what query_black_box() returns in the live oracle.
             dt_s = dt_ms / 1000.0
             gt_s = gt_ms / 1000.0
             if ds == 'complete' and gs == 'complete' and dt_s > 0 and gt_s > 0:
-                score = dt_s / gt_s
+                if self.task_id == 'adversarial_query_abs':
+                    score = dt_s - gt_s
+                else:
+                    score = dt_s / gt_s
             elif ds in ('error', 'timeout'):
                 score = -dt_s  # matches query_black_box line 466: score = -d['time_seconds']
             else:

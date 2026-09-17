@@ -201,7 +201,7 @@ def runtime_dependencies_ready() -> bool:
             PYTHON,
             "-c",
             (
-                "import accelerate, duckdb, lark, lightning, loguru, matplotlib, "
+                "import accelerate, botorch, duckdb, gpytorch, lark, lightning, loguru, matplotlib, "
                 "networkx, openai, pandas, psycopg, pyarrow, pydantic, pydot, "
                 "sqlglot, torch, transformers, vllm; "
                 "assert transformers.__version__ == '4.55.0'; "
@@ -340,6 +340,8 @@ packages = [
     "glom==24.11.0",
     "lightning==2.5.1.post0",
     "torchmetrics==1.7.1",
+    "gpytorch==1.14",
+    "botorch==0.14.0",
     "fire>=0.7,<1",
     "wandb>=0.19,<1",
 ]

@@ -47,6 +47,7 @@ class AdversarialQueryVAEObjective(LatentSpaceObjective):
         # Use "JOB" for IMDB grammars (not "IMDB"). See SCHEMA_NAMING.md.
         schema: str = "JOB",
         db_backend: str = "duckdb",
+        timeout_ms: int = 30000,
         **kwargs
     ):
         self.query_dim = query_dim
@@ -60,6 +61,7 @@ class AdversarialQueryVAEObjective(LatentSpaceObjective):
         self.api_model_name = api_model_name
         self.schema = schema
         self.db_backend = db_backend
+        self.timeout_ms = timeout_ms
 
         # Load grammar from registry
         self.grammar_string = get_grammar(grammar_name)
@@ -80,7 +82,10 @@ class AdversarialQueryVAEObjective(LatentSpaceObjective):
 
         # Initialize the adversarial query objective
         self.objective_function = OBJECTIVE_FUNCTIONS_DICT[task_id](
-            *task_specific_args, schema=self.schema, db_backend=self.db_backend,
+            *task_specific_args,
+            schema=self.schema,
+            db_backend=self.db_backend,
+            timeout_ms=self.timeout_ms,
         )
 
         # Initialize constraint functions if any
