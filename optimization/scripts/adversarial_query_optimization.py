@@ -219,15 +219,33 @@ class AdversarialQueryOptimization(Optimize):
             db_backend=self.db_backend,
             timeout_ms=self.timeout_ms,
         )
-        batch_size = 10
+        batch_size = max(1, int(os.environ.get("ORACLE_INIT_BATCH_SIZE", "10")))
         all_scores = []
         all_censoring = []
         for i in range(0, len(x_list), batch_size):
             batch = x_list[i:i+batch_size]
-            logger.info(f"Oracle init batch {i//batch_size + 1}/{(len(x_list)-1)//batch_size + 1} ({len(batch)} queries)")
+            batch_number = i // batch_size + 1
+            batch_count = (len(x_list) - 1) // batch_size + 1
+            logger.info(
+                "Oracle init batch %d/%d starting (%d queries; %d/%d complete)",
+                batch_number,
+                batch_count,
+                len(batch),
+                i,
+                len(x_list),
+            )
             bs, bc = oracle_obj.query_black_box(batch)
             all_scores.extend(bs)
             all_censoring.extend(bc)
+            logger.info(
+                "Oracle init batch %d/%d finished (%d/%d complete; scores=%s; censored=%s)",
+                batch_number,
+                batch_count,
+                min(i + len(batch), len(x_list)),
+                len(x_list),
+                bs,
+                bc,
+            )
 
         if not x_list:
             raise ValueError("No valid Stack initialization points found")
@@ -618,4 +636,9 @@ class AdversarialQueryOptimization(Optimize):
 
 
 if __name__ == "__main__":
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
+        force=True,
+    )
     fire.Fire(AdversarialQueryOptimization)

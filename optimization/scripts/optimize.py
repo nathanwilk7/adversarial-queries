@@ -365,6 +365,12 @@ class Optimize(object):
             # acquisition after the budget has been exhausted.
             if not contine_run_condition:
                 break
+            print(
+                f"BO iteration {self.n_iters + 1} starting "
+                f"(oracle calls {self.lolbo_state.objective.num_calls}/"
+                f"{self.max_n_oracle_calls})",
+                flush=True,
+            )
             # update models end to end when we fail to make
             #   progress e2e_freq times in a row (e2e_freq=10 by default)
             start_update_models = time.time()
@@ -379,6 +385,14 @@ class Optimize(object):
             self.time_to_update_model = time.time() - start_update_models
             # generate new candidate points, evaluate them, and update data
             self.lolbo_state.acquisition() # other timing logged within here 
+            print(
+                f"BO iteration {self.n_iters + 1} finished "
+                f"(oracle calls {self.lolbo_state.objective.num_calls}/"
+                f"{self.max_n_oracle_calls}; "
+                f"scores={self.lolbo_state.out_dict.get('scores')}; "
+                f"censoring={self.lolbo_state.out_dict.get('censoring')})",
+                flush=True,
+            )
             # if a new best has been found, print out new best input and score:
             if self.lolbo_state.new_best_found:
                 if self.verbose:
