@@ -94,7 +94,7 @@ def extract_join_keys(
                         case sqlglot.expressions.PrimaryKey():
                             info = "primary key"
                             key_columns.add((table_name, columndef_expr.name))
-            case sqlglot.expressions.AlterTable():
+            case sqlglot.expressions.Alter():
                 if "actions" in expr.args:
                     for action in expr.args["actions"]:
                         if isinstance(

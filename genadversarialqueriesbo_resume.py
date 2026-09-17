@@ -400,6 +400,48 @@ if 'PG_PASS = os.environ["PG_PASS"]' in legacy_source:
 legacy_oracle.write_text(legacy_source)
 print("Legacy oracle import is side-effect safe")
 
+# SQLGlot represents ALTER TABLE statements with the generic Alter node.  The
+# repository referenced a class that does not exist in the pinned release.
+schema_module = REPO / "workload/schema.py"
+schema_source = schema_module.read_text()
+if "sqlglot.expressions.AlterTable()" in schema_source:
+    schema_module.write_text(
+        schema_source.replace(
+            "sqlglot.expressions.AlterTable()",
+            "sqlglot.expressions.Alter()",
+        )
+    )
+    print("Updated the SQLGlot ALTER expression matcher")
+else:
+    print("SQLGlot ALTER expression matcher already compatible")
+
+# This checkout omits three optional benchmark schema files, but workloads.py
+# eagerly constructs every workload at import time.  Fall back to the matching
+# bundled schemas so Stack-only imports do not fail on unrelated benchmarks.
+workloads_module = REPO / "workload/workloads.py"
+workloads_source = workloads_module.read_text()
+fallbacks = {
+    'DSB_SCHEMA_PATH = os.path.join(DSB_DIR, "schema.sql")':
+        'DSB_SCHEMA_PATH = os.path.join(DSB_DIR, "schema.sql")\n'
+        'if not os.path.exists(DSB_SCHEMA_PATH):\n'
+        '    DSB_SCHEMA_PATH = IMDB_SCHEMA_PATH',
+    'SQLSTORM_SCHEMA_PATH = os.path.join(SQLSTORM_DIR, "sqlstorm_schema.sql")':
+        'SQLSTORM_SCHEMA_PATH = os.path.join(SQLSTORM_DIR, "sqlstorm_schema.sql")\n'
+        'if not os.path.exists(SQLSTORM_SCHEMA_PATH):\n'
+        '    SQLSTORM_SCHEMA_PATH = STACK_SCHEMA_PATH',
+    'STACK_ON_SQLSTORM_SCHEMA_PATH = os.path.join(STACK_ON_SQLSTORM_DIR, "schema.sql")':
+        'STACK_ON_SQLSTORM_SCHEMA_PATH = os.path.join(STACK_ON_SQLSTORM_DIR, "schema.sql")\n'
+        'if not os.path.exists(STACK_ON_SQLSTORM_SCHEMA_PATH):\n'
+        '    STACK_ON_SQLSTORM_SCHEMA_PATH = STACK_SCHEMA_PATH',
+}
+for original, replacement in fallbacks.items():
+    if replacement not in workloads_source:
+        if original not in workloads_source:
+            raise RuntimeError(f"Could not locate workload path assignment: {original}")
+        workloads_source = workloads_source.replace(original, replacement, 1)
+workloads_module.write_text(workloads_source)
+print("Optional workload schema fallbacks are present")
+
 inference_file = REPO / "optimization/query_inference/grammar_constrained_inference.py"
 inference_source = inference_file.read_text()
 if 'stop=["<|eot_id|>"]' not in inference_source:

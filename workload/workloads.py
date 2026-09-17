@@ -476,6 +476,8 @@ def load_so_shifted():
 # =====
 DSB_DIR = os.path.join(os.path.dirname(__file__), "dsb")
 DSB_SCHEMA_PATH = os.path.join(DSB_DIR, "schema.sql")
+if not os.path.exists(DSB_SCHEMA_PATH):
+    DSB_SCHEMA_PATH = IMDB_SCHEMA_PATH
 DSB_WORKLOAD_SET = WorkloadDefinitionSet(DSB_SCHEMA_PATH, {})
 
 
@@ -508,6 +510,8 @@ def load_dsb():
 # ==========
 SQLSTORM_DIR = os.path.join(os.path.dirname(__file__), "adversarial-benchmark")
 SQLSTORM_SCHEMA_PATH = os.path.join(SQLSTORM_DIR, "sqlstorm_schema.sql")
+if not os.path.exists(SQLSTORM_SCHEMA_PATH):
+    SQLSTORM_SCHEMA_PATH = STACK_SCHEMA_PATH
 SQLSTORM_WORKLOAD_SET = WorkloadDefinitionSet(
     SQLSTORM_SCHEMA_PATH,
     {},
@@ -538,6 +542,8 @@ JOB_COMPLEX_WORKLOAD_SET = WorkloadDefinitionSet(
 # ===================
 STACK_ON_SQLSTORM_DIR = os.path.join(os.path.dirname(__file__), "stack-on-sqlstorm")
 STACK_ON_SQLSTORM_SCHEMA_PATH = os.path.join(STACK_ON_SQLSTORM_DIR, "schema.sql")
+if not os.path.exists(STACK_ON_SQLSTORM_SCHEMA_PATH):
+    STACK_ON_SQLSTORM_SCHEMA_PATH = STACK_SCHEMA_PATH
 STACK_ON_SQLSTORM_WORKLOAD_SET = WorkloadDefinitionSet(
     STACK_ON_SQLSTORM_SCHEMA_PATH, {}, db="sqlstorm", db_user="so", prewarm=False
 )
