@@ -645,7 +645,39 @@ run_python(
 
 section("8. Install and initialize the local PostgreSQL job queue")
 if shutil.which("psql") is None:
-    run(["sudo", "apt-get", "update", "-qq"])
+    apt_update = run(
+        ["sudo", "apt-get", "update", "-qq", "-o", "Acquire::Retries=3"],
+        check=False,
+    )
+    if apt_update.returncode:
+        # Colab sometimes ships a CRAN mirror entry while that mirror is
+        # mid-sync, causing an unrelated size/hash failure. PostgreSQL does
+        # not need CRAN, so disable only that source in this disposable VM.
+        disabled = []
+        source_roots = [Path("/etc/apt/sources.list"), Path("/etc/apt/sources.list.d")]
+        source_files = []
+        for source_root in source_roots:
+            if source_root.is_file():
+                source_files.append(source_root)
+            elif source_root.is_dir():
+                source_files.extend(source_root.glob("*.list"))
+                source_files.extend(source_root.glob("*.sources"))
+        for source_file in source_files:
+            try:
+                contents = source_file.read_text(errors="replace")
+            except OSError:
+                continue
+            if "cloud.r-project.org" not in contents:
+                continue
+            disabled_path = source_file.with_name(source_file.name + ".disabled")
+            run(["sudo", "mv", source_file, disabled_path])
+            disabled.append(str(disabled_path))
+        if not disabled:
+            raise RuntimeError(
+                "APT update failed, and no failing CRAN source could be identified"
+            )
+        print("Temporarily disabled CRAN APT source(s):", disabled)
+        run(["sudo", "apt-get", "update", "-qq", "-o", "Acquire::Retries=3"])
     run(["sudo", "apt-get", "install", "-y", "postgresql", "postgresql-client"])
 run(["sudo", "service", "postgresql", "start"])
 run(["pg_isready"])
