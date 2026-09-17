@@ -360,6 +360,11 @@ class Optimize(object):
             else:
                 total_non_parallel_runtime_so_far_hours = self.total_non_parallel_runtime_so_far/3600 
                 contine_run_condition = total_non_parallel_runtime_so_far_hours < self.max_non_parallel_runtime_hours
+            # The condition is recomputed inside the loop so logging still runs
+            # once at the boundary.  Do not perform another model update and
+            # acquisition after the budget has been exhausted.
+            if not contine_run_condition:
+                break
             # update models end to end when we fail to make
             #   progress e2e_freq times in a row (e2e_freq=10 by default)
             start_update_models = time.time()
