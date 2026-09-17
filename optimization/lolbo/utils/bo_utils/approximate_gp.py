@@ -40,7 +40,14 @@ from botorch.sampling import MCSampler
 from gpytorch.constraints import GreaterThan
 from gpytorch.distributions import MultivariateNormal
 from gpytorch.kernels import Kernel, MaternKernel, ScaleKernel
-from gpytorch.lazy import LazyTensor
+try:
+    # GPyTorch <=1.9 exposed the base lazy operator under this name.
+    from gpytorch.lazy import LazyTensor
+except ImportError:
+    # Newer GPyTorch releases moved lazy operators to linear_operator.  This
+    # symbol is used only for type annotation below; kernel behavior is the
+    # same through the compatibility package.
+    from linear_operator.operators import LinearOperator as LazyTensor
 from gpytorch.likelihoods import (
     GaussianLikelihood,
     Likelihood,

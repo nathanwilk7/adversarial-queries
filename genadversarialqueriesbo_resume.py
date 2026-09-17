@@ -351,13 +351,17 @@ else:
     run([uv_path, "pip", "install", "--python", PYTHON, *packages])
 run_python(
     """
-    import accelerate, duckdb, psycopg, torch, transformers, vllm
+    import accelerate, botorch, duckdb, gpytorch, psycopg, torch, transformers, vllm
+    from optimization.lolbo.lolbo import LOLBOState
     print("torch:", torch.__version__)
     print("transformers:", transformers.__version__)
     print("vllm:", vllm.__version__)
     print("accelerate:", accelerate.__version__)
     print("duckdb:", duckdb.__version__)
     print("psycopg:", psycopg.__version__)
+    print("botorch:", botorch.__version__)
+    print("gpytorch:", gpytorch.__version__)
+    print("LOLBO import: PASS")
     print("CUDA available:", torch.cuda.is_available())
     if not torch.cuda.is_available():
         raise RuntimeError("Select an A100 GPU runtime before running this script")
