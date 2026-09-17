@@ -21,6 +21,27 @@ from grammars import get_grammar_config
 logger = logging.getLogger(__name__)
 
 
+def lark_to_gbnf(grammar: str) -> str:
+    """Convert the repository's simple Lark grammars to vLLM GBNF.
+
+    These grammar files use one rule per line and only literals, rule
+    references, alternatives, and ``?`` quantifiers, all of which map directly
+    to GBNF.  vLLM's grammar entry rule is conventionally named ``root``.
+    """
+    converted = []
+    for raw_line in grammar.splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+        name, separator, expression = line.partition(":")
+        if not separator:
+            raise ValueError(f"Unsupported grammar line: {raw_line!r}")
+        if name == "start":
+            name = "root"
+        converted.append(f"{name.strip()} ::= {expression.strip()}")
+    return "\n".join(converted)
+
+
 class EmbeddingMapper(torch.nn.Module):
     """Updated wrapper for the embedding mapping layer that matches new training architecture.
     Now outputs 4 tokens instead of 1."""
@@ -90,7 +111,8 @@ class GrammarConstrainedInference:
         
         # Load grammar configuration from registry
         self.grammar_config = get_grammar_config(grammar_name)
-        self.grammar = self.grammar_config.get_grammar()
+        self.validation_grammar = self.grammar_config.get_grammar()
+        self.grammar = lark_to_gbnf(self.validation_grammar)
         self.grammar_name = grammar_name
         
         logger.info(f"Loaded grammar: {grammar_name}")

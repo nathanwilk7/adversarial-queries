@@ -6,6 +6,7 @@ Query VAE uses a frozen LLM with 256-dim embeddings; plan VAE uses plan_vae with
 import logging
 import numpy as np
 import torch
+from lark import Lark
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
@@ -65,6 +66,7 @@ class AdversarialQueryVAEObjective(LatentSpaceObjective):
 
         # Load grammar from registry
         self.grammar_string = get_grammar(grammar_name)
+        self.query_parser = Lark(self.grammar_string, parser="lalr")
 
         # Set fallback query based on schema
         config = get_grammar_config(grammar_name)
@@ -157,14 +159,33 @@ class AdversarialQueryVAEObjective(LatentSpaceObjective):
         logger.debug(f"Generating {z_query.shape[0]} queries in batch")
         queries = self.query_vae.generate_with_grammar_batch(
             embedding_vectors=z_query,  # Pass entire tensor
-            grammar=self.grammar_string,
+            grammar=self.query_vae.grammar,
             max_tokens=64,
             temperature=0.7,
             max_concurrent=min(20, z_query.shape[0])  # Limit concurrent requests
         )
 
-        # Ensure we have fallback queries for any that failed
-        queries = [query if query else self.fallback_query for query in queries]
+        # Grammar guidance is supplied to vLLM, but malformed text can still be
+        # returned at tokenizer boundaries.  Never send such text to the SQL
+        # oracle: validate it with the same grammar and use a cheap valid
+        # fallback while retaining a warning with the raw output for diagnosis.
+        validated_queries = []
+        for query in queries:
+            if not query:
+                validated_queries.append(self.fallback_query)
+                continue
+            try:
+                self.query_parser.parse(query)
+                validated_queries.append(query)
+            except Exception as error:
+                logger.warning(
+                    "Rejected grammar-invalid decoder output %r: %s; using %r",
+                    query,
+                    error,
+                    self.fallback_query,
+                )
+                validated_queries.append(self.fallback_query)
+        queries = validated_queries
 
         # Decode plans using plan VAE (simple encoding)
         self.plan_vae.eval()

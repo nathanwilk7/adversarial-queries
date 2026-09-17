@@ -368,6 +368,14 @@ class _BaseAdversarialQueryObjective(ObjectiveFunction):
             msg = getattr(inner, "error", "")
             return ("Could not set lock" in msg) or ("Conflicting lock" in msg)
 
+        def _error_message(result) -> Optional[str]:
+            if getattr(result, "type", None) != "time_query":
+                return None
+            inner = getattr(result, "result", None)
+            if inner is None or getattr(inner, "result", None) != "error":
+                return None
+            return str(getattr(inner, "error", "Unknown database error"))
+
         def _query_one(single_input):
             for attempt in range(max_retries + 1):
                 try:
@@ -377,6 +385,13 @@ class _BaseAdversarialQueryObjective(ObjectiveFunction):
                         print(f"RETRY {attempt + 1}/{max_retries}: lock error in {query_type} query; retrying after {retry_delay}s")
                         time.sleep(retry_delay)
                         continue
+                    error_message = _error_message(res)
+                    if error_message is not None:
+                        print(
+                            f"DATABASE ERROR in {query_type} query: "
+                            f"{error_message}",
+                            flush=True,
+                        )
                     return res
                 except Exception as e:
                     if attempt < max_retries:
