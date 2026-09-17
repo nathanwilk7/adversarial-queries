@@ -83,7 +83,23 @@ def run(
 ) -> subprocess.CompletedProcess:
     rendered = [str(item) for item in command]
     print("+", " ".join(rendered), flush=True)
-    return subprocess.run(rendered, cwd=cwd, env=env, check=check)
+    process = subprocess.Popen(
+        rendered,
+        cwd=cwd,
+        env=env,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        bufsize=1,
+    )
+    assert process.stdout is not None
+    for line in process.stdout:
+        print(line, end="", flush=True)
+    return_code = process.wait()
+    result = subprocess.CompletedProcess(rendered, return_code)
+    if check and return_code:
+        raise subprocess.CalledProcessError(return_code, rendered)
+    return result
 
 
 def run_capture(
@@ -188,7 +204,7 @@ def runtime_dependencies_ready() -> bool:
                 "import accelerate, duckdb, lark, lightning, loguru, matplotlib, "
                 "networkx, openai, pandas, psycopg, pyarrow, pydantic, pydot, "
                 "sqlglot, torch, transformers, vllm; "
-                "assert transformers.__version__ == '4.53.2'; "
+                "assert transformers.__version__ == '4.55.0'; "
                 "assert vllm.__version__ == '0.10.1'; "
                 "assert duckdb.__version__ == '1.3.2'; "
                 "assert torch.cuda.is_available()"
@@ -302,7 +318,9 @@ else:
 # Transformers after resolution so vLLM does not pick an incompatible 5.x.
 packages = [
     "vllm==0.10.1",
-    "transformers==4.53.2",
+    # vLLM 0.10.1 requires >=4.55.0. Pin the first compatible 4.x release;
+    # Transformers 5.x removes tokenizer properties used by this vLLM build.
+    "transformers==4.55.0",
     "accelerate==1.8.1",
     "sentencepiece==0.2.0",
     "openai>=1.87,<2",
