@@ -303,15 +303,16 @@ class AdversarialQueryOptimization(Optimize):
             # Score must match what query_black_box() returns in the live oracle.
             dt_s = dt_ms / 1000.0
             gt_s = gt_ms / 1000.0
-            if ds == 'complete' and gs == 'complete' and dt_s > 0 and gt_s > 0:
-                if self.task_id == 'adversarial_query_abs':
-                    score = dt_s - gt_s
-                else:
-                    score = dt_s / gt_s
-            elif ds in ('error', 'timeout'):
-                score = -dt_s  # matches query_black_box line 466: score = -d['time_seconds']
+            # The live oracle always applies the objective to its recorded
+            # times, including timeout/error fallback times, and marks the
+            # observation as censored separately.  Reproduce that exactly when
+            # restoring a log so the surrogate sees the same y values.
+            if self.task_id == 'adversarial_query_abs':
+                score = dt_s - gt_s
+            elif dt_s > 0 and gt_s > 0:
+                score = dt_s / gt_s
             else:
-                score = -gt_s if gt_s > 0 else -30.0
+                score = 0.0
 
             is_censored = 1 if (ds == 'timeout' or gs == 'timeout' or ds == 'error' or gs == 'error') else 0
             scores.append(score)
