@@ -864,10 +864,15 @@ run_python(
     logging.getLogger("sqlglot").setLevel(logging.ERROR)
 
     from optimization.objectives.your_objective_functions import AbsoluteTimeImprovementObjective
+    from oracle.adversarial_queries import get_predicate_graph
     from workload.workloads import get_workload_set
     stack = get_workload_set("Stack")
+    graph = get_predicate_graph(stack)
     print("Stack tables:", stack.tables)
     assert len(stack.tables) == 10
+    print("Stack join edges:", graph.number_of_edges())
+    assert graph.number_of_edges() > 0
+    assert graph.has_edge("answer", "question")
     print("Objective import: PASS")
     """,
     timeout=180,

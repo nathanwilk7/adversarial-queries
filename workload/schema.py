@@ -97,28 +97,29 @@ def extract_join_keys(
             case sqlglot.expressions.Alter():
                 if "actions" in expr.args:
                     for action in expr.args["actions"]:
-                        if isinstance(
-                            action, sqlglot.expressions.AddConstraint
-                        ) and isinstance(
-                            action.expression, sqlglot.expressions.ForeignKey
+                        if not isinstance(action, sqlglot.expressions.AddConstraint):
+                            continue
+
+                        # SQLGlot 25 represents an ADD CONSTRAINT foreign key as
+                        # AddConstraint -> Constraint -> ForeignKey.  Older code
+                        # expected the ForeignKey directly in ``action.expression``
+                        # and consequently built a graph containing ten isolated
+                        # Stack tables.  Walk the action so both AST layouts work.
+                        for foreign_key in action.find_all(
+                            sqlglot.expressions.ForeignKey
                         ):
-                            table = expr.this.this.name
-                            column_names = [
-                                e.name for e in action.expression.expressions
-                            ]
+                            table = expr.this.name
+                            column_names = [e.name for e in foreign_key.expressions]
 
-                            foreign_table = action.expression.args[
-                                "reference"
-                            ].this.this.name
+                            reference_schema = foreign_key.args["reference"].this
+                            foreign_table = reference_schema.this.name
                             foreign_column_names = [
-                                e.name
-                                for e in action.expression.args[
-                                    "reference"
-                                ].this.expressions
+                                e.name for e in reference_schema.expressions
                             ]
 
-                            # This is not right, foreign keys can be on multiple columns.
-                            # We treat each column separately and hope that it's only ever used to reference one foreign column.
+                            # Composite foreign keys are represented as one graph
+                            # edge.  Retain the historical column-pair behavior;
+                            # NetworkX keeps the final pair as the edge label.
                             for column_name, foreign_column_name in zip(
                                 column_names, foreign_column_names
                             ):
