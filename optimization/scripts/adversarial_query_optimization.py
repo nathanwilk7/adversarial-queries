@@ -1,7 +1,9 @@
 """Adversarial Query Optimization — LOLBO for adversarial query generation."""
 
+import logging
 import sys
 from pathlib import Path
+logging.getLogger("sqlglot").setLevel(logging.ERROR)
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 import fire
 from optimization.scripts.optimize import Optimize
@@ -13,7 +15,6 @@ import math
 import os
 from datetime import datetime
 import csv
-import logging
 import wandb
 
 logger = logging.getLogger(__name__)

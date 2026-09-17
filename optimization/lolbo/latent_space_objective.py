@@ -66,7 +66,13 @@ class LatentSpaceObjective:
         if decoded_xs is None:
             decoded_xs = self.vae_decode(z)
 
-        decoded_xs = [canonicalize(x, self.objective_function.full_workload_spec) for x in decoded_xs]
+        # Join-order objectives decode integer plans and need codec
+        # canonicalization.  Adversarial-query objectives decode complete
+        # ``query[SEP]plan`` strings and intentionally have no workload spec;
+        # preserve those strings for parsing by their own oracle.
+        workload_spec = getattr(self.objective_function, "full_workload_spec", None)
+        if workload_spec is not None:
+            decoded_xs = [canonicalize(x, workload_spec) for x in decoded_xs]
 
         scores = []
         cens = []
