@@ -309,6 +309,10 @@ class GrammarConstrainedInference:
                 prompt="",  # Empty since we're using embeddings
                 max_tokens=max_tokens,
                 temperature=temperature,
+                # The training targets end with this literal sentinel. Qwen's
+                # tokenizer does not treat it as a special EOS token, so vLLM
+                # must be told explicitly to stop before returning it.
+                stop=["<|eot_id|>"],
                 extra_body={
                     "prompt_embeds": encoded_embeds,
                     "guided_grammar": grammar

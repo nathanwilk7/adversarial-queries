@@ -1,4 +1,5 @@
 import asyncio
+import os
 import pdb
 import random
 import time
@@ -221,7 +222,7 @@ import json
 
 import psycopg
 
-PG_PASS = os.environ["PG_PASS"]
+PG_PASS = os.environ.get("PG_PASS", "")
 
 INSERT_SQL = """
 INSERT INTO job (sql_statement, target_db, db_user, timeout_ms) 
