@@ -516,6 +516,8 @@ class _BaseAdversarialQueryObjective(ObjectiveFunction):
                     'query': parsed_inputs[i].query_string,
                     'generated_plan': g['plan'],
                     'default_time_ms': d_ms, 'generated_time_ms': g_ms,
+                    'default_status': d['status'],
+                    'generated_status': g['status'],
                     'absolute_advantage_ms': d_ms - g_ms,
                     'relative_advantage': (d_ms / g_ms) if g_ms > 0 else None,
                     'timeout_ms': self.timeout_ms, 'source': self._source_tag()
@@ -529,6 +531,8 @@ class _BaseAdversarialQueryObjective(ObjectiveFunction):
                     'query': parsed_inputs[i].query_string,
                     'generated_plan': None,
                     'default_time_ms': d_ms, 'generated_time_ms': None,
+                    'default_status': d['status'],
+                    'generated_status': None,
                     'absolute_advantage_ms': None, 'relative_advantage': None,
                     'timeout_ms': self.timeout_ms, 'source': self._source_tag()
                 })

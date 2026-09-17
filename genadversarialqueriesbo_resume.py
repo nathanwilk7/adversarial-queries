@@ -828,6 +828,9 @@ run_python(
 section("11. Import the Stack objective")
 run_python(
     """
+    import logging
+    logging.getLogger("sqlglot").setLevel(logging.ERROR)
+
     from optimization.objectives.your_objective_functions import AbsoluteTimeImprovementObjective
     from workload.workloads import get_workload_set
     stack = get_workload_set("Stack")
@@ -843,7 +846,11 @@ section("12. Resume point: real default-versus-witness Stack oracle call")
 run_python(
     """
     import json
+    import logging
     from pathlib import Path
+
+    logging.getLogger("sqlglot").setLevel(logging.ERROR)
+
     from optimization.objectives.your_objective_functions import AbsoluteTimeImprovementObjective
 
     log_path = Path("/content/oracle-smoke-results.csv")
