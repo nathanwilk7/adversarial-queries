@@ -304,6 +304,14 @@ else:
 
 if missing:
     raise FileNotFoundError("Missing Drive artifacts:\n" + "\n".join(map(str, missing)))
+
+# Keep older copies of the notebook working when an alternate mount was
+# required: their experiment cells still reference /content/drive/MyDrive.
+primary_artifact_root = primary_mount / "MyDrive/adversarial-query-data"
+if DRIVE_ROOT != primary_artifact_root and not primary_artifact_root.exists():
+    primary_artifact_root.parent.mkdir(parents=True, exist_ok=True)
+    primary_artifact_root.symlink_to(DRIVE_ROOT, target_is_directory=True)
+    print(f"Compatibility link: {primary_artifact_root} -> {DRIVE_ROOT}")
 print(f"Using durable artifact root: {DRIVE_ROOT}")
 
 
