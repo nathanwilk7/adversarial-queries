@@ -30,20 +30,24 @@ def verify_candidate(oracle, item, repeats, timeout_ms):
                 pair[name] = {'status': 'error', 'seconds': None, 'result': None, 'error': str(error)}
         complete = all(pair[n]['status'] == 'complete' for n in order)
         equivalent = None
+        result_count = None
         if complete and all(pair[n]['result'] is not None for n in order):
             # These oracle queries return SELECT COUNT(*). Compare the exact
             # scalar value, independently of the SQL expression's column label.
             values = [json.loads(pair[n]['result']) for n in ['default', 'generated']]
             if all(isinstance(v, list) and len(v) == 1 and isinstance(v[0], dict) and len(v[0]) == 1 for v in values):
                 equivalent = list(values[0][0].values()) == list(values[1][0].values())
+                if equivalent:
+                    result_count = next(iter(values[0][0].values()))
         advantage = pair['default']['seconds'] - pair['generated']['seconds'] if complete else None
         runs.append({'repeat': repeat + 1, 'execution_order': order, 'default_status': pair['default']['status'],
                      'generated_status': pair['generated']['status'], 'result_equivalent': equivalent,
-                     'score_seconds': advantage, 'observations': pair})
+                     'result_count': result_count, 'score_seconds': advantage, 'observations': pair})
         print(item['query'], 'repeat', repeat + 1, 'order', order, 'equivalent', equivalent, 'advantage', advantage, flush=True)
     valid = [r for r in runs if r['result_equivalent'] is True]
     advantages = [r['score_seconds'] for r in valid]
     return {**item, 'runs': runs, 'complete_repeats': sum(r['default_status'] == r['generated_status'] == 'complete' for r in runs),
             'equivalent_repeats': len(valid), 'result_mismatches': sum(r['result_equivalent'] is False for r in runs),
+            'nonempty_repeats': sum(r['result_count'] is not None and r['result_count'] > 0 for r in valid),
             'median_advantage_seconds': median(advantages) if advantages else None,
             'positive_complete_repeats': sum(v > 0 for v in advantages)}

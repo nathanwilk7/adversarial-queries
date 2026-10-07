@@ -1,6 +1,5 @@
 import asyncio
 import json
-import pdb
 import selectors
 import sys
 import threading
@@ -24,6 +23,7 @@ from optimization.codec.codec import (
     SymbolTable,
 )
 from logger.log import l
+from oracle.predicate_result import scalar_predicate_result
 from oracle.pg_celery_worker.pg_worker.config import get_config
 from oracle.oracle import WorkloadInput as BayesQOWorkloadInput
 from oracle.oracle import _default_plan, _resolve_codec
@@ -483,27 +483,11 @@ class AdversarialQueryOracle:
         if isinstance(result, contracts.RunSQLResponse) and isinstance(
             result.result, contracts.RunSQLCompleteResponse
         ):
-            # Handle JSON-serialized pandas DataFrame output from df.to_json()
-            try:
-                # Parse the JSON string from df.to_json()
-                df_json = json.loads(result.result.df_json)
-
-                if isinstance(df_json, list):
-                    if len(df_json) == 1:
-                        output = df_json[0]["val"]
-                    else:
-                        import pdb
-                        pdb.set_trace()
-                        raise RuntimeError(
-                            f"Query returned {len(df_json)} rows, expected exactly 1: {df_json}"
-                        )
-                else:
-                    raise RuntimeError(f"Unexpected output format: {df_json}")
-            except json.JSONDecodeError as e:
-                raise RuntimeError(f"Failed to parse JSON: {result.output}, error: {e}")
+            output = scalar_predicate_result(result.result.df_json, key)
 
             if output is None:
-                # DuckDB returns None if the literal value is the empty string
+                l.warning(f"Predicate lookup has no non-NULL value: {key}; comparison will be empty")
+                # Preserve the existing typed-sentinel conversion downstream.
                 output = "''"
 
             # Update cache and predicate_values table
@@ -519,10 +503,7 @@ class AdversarialQueryOracle:
             output = await self.__insert_or_lookup(insert_query, lookup_query, output)
             return output
         else:
-            import pdb
-
-            pdb.set_trace()
-            raise RuntimeError(f"Failed to get value for {key}")
+            raise RuntimeError(f"Failed to get value for {key}; SQL={sql!r}; response={result!r}")
 
     async def __get_int_value(self, table_name, field, value, db_schema: Literal["JOB", "SQLStorm", "JOB-Complex", "Stack"]):
         key = (table_name, field, value)
