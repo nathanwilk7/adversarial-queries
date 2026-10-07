@@ -601,13 +601,36 @@ run_python(
 
 
 section("6. Start vLLM")
+# vLLM 0.10.1 retained the V0 custom-processor execution code, but its
+# multi-step rejection lost the scheduler condition. Restore that condition
+# only for this exact pinned source; fail if upstream code differs.
+run_python(
+    r'''
+    from pathlib import Path
+    import vllm
+    assert vllm.__version__ == "0.10.1"
+    engine = Path(vllm.__file__).parent / "engine/llm_engine.py"
+    source = engine.read_text()
+    old = "if isinstance(params, SamplingParams) \\\n            and params.logits_processors:"
+    new = "if isinstance(params, SamplingParams) \\\n            and params.logits_processors \\\n            and self.scheduler_config.num_scheduler_steps > 1:"
+    if new in source:
+        print("V0 single-step processor compatibility repair already installed")
+    elif source.count(old) == 1:
+        repaired = source.replace(old, new, 1)
+        compile(repaired, str(engine), "exec")
+        engine.write_text(repaired)
+        print("Installed V0 single-step processor compatibility repair")
+    else:
+        raise RuntimeError("Unexpected vLLM V0 source; cannot apply compatibility repair")
+    '''
+)
 health_url = "http://" + "127.0.0.1:8000/health"
 models_url = "http://" + "127.0.0.1:8000/v1/models"
 if http_healthy(health_url) and process_alive(VLLM_PID):
     import signal
     server_pid = int(VLLM_PID.read_text().strip())
     command_line = Path(f"/proc/{server_pid}/cmdline").read_bytes().split(b"\0")
-    if b"vllm.entrypoints.openai.api_server" in command_line and b"--logits-processor-pattern" not in command_line:
+    if b"vllm.entrypoints.openai.api_server" in command_line and (b"--logits-processor-pattern" not in command_line or b"--num-scheduler-steps" not in command_line):
         print("Restarting the recorded vLLM server to enable explicit grammar masking")
         os.kill(server_pid, signal.SIGTERM)
         for _ in range(30):
@@ -635,6 +658,8 @@ if not http_healthy(health_url):
             "--served-model-name",
             "advq-decoder",
             "--enable-prompt-embeds",
+            "--num-scheduler-steps",
+            "1",
             "--logits-processor-pattern",
             r"^optimization\.query_inference\.v0_constraint\.StackGrammarProcessor$",
             "--guided-decoding-backend",
