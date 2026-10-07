@@ -567,6 +567,8 @@ if not http_healthy(health_url):
             "--served-model-name",
             "advq-decoder",
             "--enable-prompt-embeds",
+            "--guided-decoding-backend",
+            "outlines",
             "--tensor-parallel-size",
             "1",
             "--dtype",
