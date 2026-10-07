@@ -48,15 +48,10 @@ REPO_BRANCH = "codex/stack-cpu-repro"
 DRIVE_ROOT = Path("/content/drive/MyDrive/adversarial-query-data")
 CPU_BACKUP = DRIVE_ROOT / "cpu-artifacts"
 MODEL_BACKUP_ROOT = DRIVE_ROOT / "trained-models"
-# Reuse the environment created by the earlier notebook when it survived in the
-# current runtime.  On a genuinely fresh Colab VM, create a dedicated runtime
-# environment instead.
-PREVIOUS_ENV_DIR = Path("/content/advq-training-env")
-ENV_DIR = (
-    PREVIOUS_ENV_DIR
-    if (PREVIOUS_ENV_DIR / "bin/python").exists()
-    else Path("/content/advq-runtime-env")
-)
+# Always use one canonical environment.  Choosing a surviving environment from
+# an earlier interactive notebook made a later Run-all cell disagree about the
+# interpreter path, even though bootstrap itself had succeeded.
+ENV_DIR = Path("/content/advq-runtime-env")
 PYTHON = ENV_DIR / "bin/python"
 UV_CANDIDATES = (
     Path("/usr/local/bin/uv"),
