@@ -17,7 +17,6 @@ from concurrent.futures import ThreadPoolExecutor
 
 # Import grammar registry
 from grammars import get_grammar_config
-from optimization.query_inference.regular_grammar import lark_to_regex
 
 logger = logging.getLogger(__name__)
 
@@ -115,7 +114,6 @@ class GrammarConstrainedInference:
         self.validation_grammar = self.grammar_config.get_grammar()
         self.grammar = lark_to_gbnf(self.validation_grammar)
         self.grammar_name = grammar_name
-        self.guided_regex = lark_to_regex(self.validation_grammar) if grammar_name == "stack" else None
         
         logger.info(f"Loaded grammar: {grammar_name}")
         logger.info(f"  Schema: {self.grammar_config.schema}")
@@ -339,8 +337,11 @@ class GrammarConstrainedInference:
                 stop=["<|eot_id|>"],
                 extra_body={
                     "prompt_embeds": encoded_embeds,
-                    **({"guided_regex": self.guided_regex, "guided_decoding_backend": "outlines"}
-                       if self.guided_regex is not None and grammar == self.grammar
+                    **({"logits_processors": [{
+                        "qualname": "optimization.query_inference.v0_constraint.StackGrammarProcessor",
+                        "kwargs": {"grammar": grammar},
+                    }]}
+                       if self.grammar_name == "stack"
                        else {"guided_grammar": grammar}),
                 },
             )
@@ -355,7 +356,7 @@ class GrammarConstrainedInference:
                     'max_tokens': max_tokens,
                     'temperature': temperature,
                     'finish_reason': completion.choices[0].finish_reason,
-                    'constraint': 'regex' if self.guided_regex is not None else 'grammar',
+                    'constraint': 'v0_xgrammar_logits_processor' if self.grammar_name == 'stack' else 'grammar',
                     'source': 'generate_with_grammar'
                 }
             )

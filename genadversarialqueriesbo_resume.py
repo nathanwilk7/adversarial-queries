@@ -603,6 +603,19 @@ run_python(
 section("6. Start vLLM")
 health_url = "http://" + "127.0.0.1:8000/health"
 models_url = "http://" + "127.0.0.1:8000/v1/models"
+if http_healthy(health_url) and process_alive(VLLM_PID):
+    import signal
+    server_pid = int(VLLM_PID.read_text().strip())
+    command_line = Path(f"/proc/{server_pid}/cmdline").read_bytes().split(b"\0")
+    if b"vllm.entrypoints.openai.api_server" in command_line and b"--logits-processor-pattern" not in command_line:
+        print("Restarting the recorded vLLM server to enable explicit grammar masking")
+        os.kill(server_pid, signal.SIGTERM)
+        for _ in range(30):
+            if not http_healthy(health_url) and not Path(f"/proc/{server_pid}").exists():
+                break
+            time.sleep(1)
+        else:
+            raise RuntimeError("Old vLLM server did not shut down; restart the Colab runtime")
 if not http_healthy(health_url):
     if process_alive(VLLM_PID):
         print("A recorded vLLM process exists but is not healthy; inspect the log")
@@ -622,6 +635,8 @@ if not http_healthy(health_url):
             "--served-model-name",
             "advq-decoder",
             "--enable-prompt-embeds",
+            "--logits-processor-pattern",
+            r"^optimization\.query_inference\.v0_constraint\.StackGrammarProcessor$",
             "--guided-decoding-backend",
             "outlines",
             "--tensor-parallel-size",
@@ -691,6 +706,14 @@ run_python(
         api_base_url="http://" + "127.0.0.1:8000/v1",
         api_model_name="advq-decoder",
     )
+    canary = inference.generate_with_grammar(
+        embedding_vector=embedding,
+        grammar='root ::= "(answer )(question )"',
+        max_tokens=64,
+        temperature=0.7,
+    )
+    assert canary == "(answer )(question )", f"Explicit grammar enforcement failed: {{canary!r}}"
+    print("Exact-output grammar enforcement canary: PASS")
     generated = inference.generate_with_grammar(
         embedding_vector=embedding,
         max_tokens=128,
