@@ -533,10 +533,29 @@ for source, destination in artifact_destinations.items():
 
 decoder_pointer = MODEL_BACKUP_ROOT / "latest-stack-query-decoder.txt"
 vae_pointer = MODEL_BACKUP_ROOT / "latest-stack-plan-vae.txt"
-decoder_backup = Path(decoder_pointer.read_text().strip())
-vae_backup = Path(vae_pointer.read_text().strip())
-if not decoder_backup.exists() or not vae_backup.exists():
-    raise FileNotFoundError("A trained-model pointer targets a missing Drive directory")
+def resolve_model_pointer(pointer: Path) -> Path:
+    """Resolve saved absolute Drive paths against this runtime's active mount."""
+    saved = Path(pointer.read_text().strip())
+    # Prefer the active mount even if a stale local copy exists at the old path.
+    parts = saved.parts
+    if "MyDrive" in parts:
+        relative = Path(*parts[parts.index("MyDrive") + 1:])
+        resolved = DRIVE_ROOT.parent / relative
+    elif saved.is_absolute():
+        resolved = saved
+    else:
+        resolved = pointer.parent / saved
+    if not resolved.is_dir():
+        raise FileNotFoundError(
+            f"Model pointer {pointer} contains {str(saved)!r}; "
+            f"resolved directory does not exist: {resolved}"
+        )
+    print(f"Resolved {pointer.name}: {resolved}")
+    return resolved
+
+
+decoder_backup = resolve_model_pointer(decoder_pointer)
+vae_backup = resolve_model_pointer(vae_pointer)
 
 weight_candidates = sorted(decoder_backup.rglob("model-*.safetensors"))
 if not weight_candidates:
