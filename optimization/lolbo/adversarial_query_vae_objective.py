@@ -192,7 +192,9 @@ class AdversarialQueryVAEObjective(LatentSpaceObjective):
                 embedding_vectors=z_query[invalid_indices],
                 grammar=self.query_vae.grammar,
                 max_tokens=128,
-                temperature=0.7,
+                # Greedy retries favor the decoder's learned canonical syntax;
+                # diversity already comes from the first pass and BO latents.
+                temperature=0.0,
                 max_concurrent=min(20, len(invalid_indices)),
             )
             for index, retry_query in zip(invalid_indices, retry_queries):

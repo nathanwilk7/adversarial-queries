@@ -537,7 +537,11 @@ class AdversarialQueryOracle:
         else:
             p = int(value) / 1000
             sql = f"SELECT quantile_disc({field}, {p}) AS val FROM {table_name}"
-        return await self.__lookup_predicate_value(key, sql, db_schema)
+        resolved = await self.__lookup_predicate_value(key, sql, db_schema)
+        # An all-NULL column has no quantile. Comparisons against any concrete
+        # value are empty under SQL NULL semantics, so use a typed sentinel
+        # instead of emitting an invalid empty integer literal.
+        return 0 if resolved == "''" else resolved
 
     async def __get_str_value(self, table_name, field, str_val, db_schema: Literal["JOB", "SQLStorm", "JOB-Complex", "Stack"]):
         key = (table_name, field, str_val)
@@ -573,7 +577,10 @@ class AdversarialQueryOracle:
             # Quantile (4-digit number between 0000 and 1000)
             p = int(value) / 1000
             sql = f"SELECT quantile_disc({field}, {p}) AS val FROM {table_name}"
-        return await self.__lookup_predicate_value(key, sql, db_schema)
+        resolved = await self.__lookup_predicate_value(key, sql, db_schema)
+        # See __get_int_value: a valid timestamp sentinel preserves the empty
+        # result for an all-NULL column without producing TIMESTAMP ''''.
+        return "1970-01-01 00:00:00" if resolved == "''" else resolved
 
     async def __resolve_predicate(
         self,
