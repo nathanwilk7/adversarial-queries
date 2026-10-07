@@ -73,7 +73,10 @@ class AdversarialQueryVAEObjective(LatentSpaceObjective):
         if config.schema == "SQLStorm":
             self.fallback_query = "(Posts )"
         elif config.schema == "Stack":
-            self.fallback_query = "(question )"
+            # Keep at least one real join edge.  A single-table fallback leaves
+            # the plan decoder with zero join choices and can trigger modulo by
+            # zero when it consumes a sampled multi-step plan.
+            self.fallback_query = "(answer )(question )"
         else:
             self.fallback_query = "(title )"
 
@@ -160,10 +163,40 @@ class AdversarialQueryVAEObjective(LatentSpaceObjective):
         queries = self.query_vae.generate_with_grammar_batch(
             embedding_vectors=z_query,  # Pass entire tensor
             grammar=self.query_vae.grammar,
-            max_tokens=64,
+            max_tokens=128,
             temperature=0.7,
             max_concurrent=min(20, z_query.shape[0])  # Limit concurrent requests
         )
+
+        # Structured decoding can still return malformed text at tokenizer
+        # boundaries. Retry only the rejected items before using the fallback;
+        # this keeps valid batch members and avoids flooding BO with one query.
+        for retry_number in range(2):
+            invalid_indices = []
+            for index, query in enumerate(queries):
+                if not query:
+                    invalid_indices.append(index)
+                    continue
+                try:
+                    self.query_parser.parse(query)
+                except Exception:
+                    invalid_indices.append(index)
+            if not invalid_indices:
+                break
+            logger.info(
+                "Retrying %d grammar-invalid decoder outputs (attempt %d/2)",
+                len(invalid_indices),
+                retry_number + 1,
+            )
+            retry_queries = self.query_vae.generate_with_grammar_batch(
+                embedding_vectors=z_query[invalid_indices],
+                grammar=self.query_vae.grammar,
+                max_tokens=128,
+                temperature=0.7,
+                max_concurrent=min(20, len(invalid_indices)),
+            )
+            for index, retry_query in zip(invalid_indices, retry_queries):
+                queries[index] = retry_query
 
         # Grammar guidance is supplied to vLLM, but malformed text can still be
         # returned at tokenizer boundaries.  Never send such text to the SQL
