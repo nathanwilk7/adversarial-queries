@@ -259,19 +259,52 @@ try:
 except ImportError as error:
     raise RuntimeError("Run this script inside Google Colab") from error
 
-drive.mount("/content/drive", force_remount=False)
-required_drive_paths = [
-    DRIVE_ROOT / "stack.duckdb",
-    CPU_BACKUP / "stack_results.csv",
-    CPU_BACKUP / "stack_embedded.parquet",
-    CPU_BACKUP / "train_stack.txt",
-    CPU_BACKUP / "val_stack.txt",
-    MODEL_BACKUP_ROOT / "latest-stack-query-decoder.txt",
-    MODEL_BACKUP_ROOT / "latest-stack-plan-vae.txt",
-]
-missing = [path for path in required_drive_paths if not path.exists()]
+
+def use_drive_mount(mountpoint: Path) -> list[Path]:
+    """Select a Drive mount and return any required artifacts still missing."""
+    global DRIVE_ROOT, CPU_BACKUP, MODEL_BACKUP_ROOT
+    DRIVE_ROOT = mountpoint / "MyDrive/adversarial-query-data"
+    CPU_BACKUP = DRIVE_ROOT / "cpu-artifacts"
+    MODEL_BACKUP_ROOT = DRIVE_ROOT / "trained-models"
+    required = [
+        DRIVE_ROOT / "stack.duckdb",
+        CPU_BACKUP / "stack_results.csv",
+        CPU_BACKUP / "stack_embedded.parquet",
+        CPU_BACKUP / "train_stack.txt",
+        CPU_BACKUP / "val_stack.txt",
+        MODEL_BACKUP_ROOT / "latest-stack-query-decoder.txt",
+        MODEL_BACKUP_ROOT / "latest-stack-plan-vae.txt",
+    ]
+    return [path for path in required if not path.exists()]
+
+
+primary_mount = Path("/content/drive")
+alternate_mount = Path("/content/advq-drive")
+missing = use_drive_mount(primary_mount)
+if not missing:
+    print(f"Google Drive artifacts are already accessible at {DRIVE_ROOT}")
+else:
+    # A repeated Colab run can leave /content/drive as a populated ordinary
+    # directory which drive.mount refuses to reuse. Mount elsewhere without
+    # deleting or overwriting anything in that directory.
+    mountpoint = primary_mount
+    if primary_mount.exists() and any(primary_mount.iterdir()):
+        mountpoint = alternate_mount
+        alternate_missing = use_drive_mount(alternate_mount)
+        if not alternate_missing:
+            print(f"Google Drive artifacts are already accessible at {DRIVE_ROOT}")
+            missing = []
+        elif alternate_mount.exists() and any(alternate_mount.iterdir()):
+            mountpoint = Path(f"/content/advq-drive-{os.getpid()}")
+
+    if missing:
+        print(f"Mounting Google Drive at {mountpoint}")
+        drive.mount(str(mountpoint), force_remount=False)
+        missing = use_drive_mount(mountpoint)
+
 if missing:
     raise FileNotFoundError("Missing Drive artifacts:\n" + "\n".join(map(str, missing)))
+print(f"Using durable artifact root: {DRIVE_ROOT}")
 
 
 section("2. Restore repository")
