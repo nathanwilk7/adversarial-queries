@@ -15,6 +15,7 @@ import os
 import csv
 import json
 import time
+from optimization.objectives.pair_observation import observation_kind, complete_pair_score
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # Oracle imports for adversarial queries
@@ -537,6 +538,12 @@ class _BaseAdversarialQueryObjective(ObjectiveFunction):
                     'relative_advantage': (d_ms / g_ms) if g_ms > 0 else None,
                     'timeout_ms': self.timeout_ms, 'source': self._source_tag()
                 })
+                self.last_call_details[-1]['observation_kind'] = observation_kind(d['status'], g['status'])
+                if getattr(self, 'complete_pairs_only', False):
+                    score = complete_pair_score(d['time_seconds'], g['time_seconds'], d['status'], g['status'])
+                    self.last_call_details[-1]['used_for_training'] = self.last_call_details[-1]['observation_kind'] == 'exact'
+                    if not self.last_call_details[-1]['used_for_training']:
+                        print(f"Excluded from surrogate: {self.last_call_details[-1]['observation_kind']} ({d['status']}/{g['status']}); attempt still counts toward budget", flush=True)
             else:
                 score = -d['time_seconds']
                 cens = d['censored']
@@ -653,6 +660,8 @@ class AbsoluteTimeImprovementObjective(_BaseAdversarialQueryObjective):
         super().__init__(workload_name=workload_name, timeout_ms=timeout_ms, schema=schema,
                          db_backend=db_backend)
         self.csv_log_path = csv_log_path
+        self.complete_pairs_only = schema == "Stack" and os.environ.get("ADVQ_COMPLETE_PAIRS_ONLY", "1") == "1"
+        self.count_all_oracle_attempts = self.complete_pairs_only
         # Default failure_penalty_seconds to the per-query timeout (not 300s) so a
         # failed plan doesn't manufacture a fake advantage. Override only if you want
         # the old inflated-sentinel behaviour.

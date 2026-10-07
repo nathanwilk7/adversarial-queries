@@ -247,6 +247,15 @@ class AdversarialQueryOptimization(Optimize):
                 bc,
             )
 
+        if getattr(oracle_obj, 'complete_pairs_only', False):
+            usable = [i for i, score in enumerate(all_scores) if math.isfinite(score)]
+            logger.info("Stack initialization: %d/%d exact pairs usable for training; remaining attempts retained in oracle logs", len(usable), len(x_list))
+            x_list = [x_list[i] for i in usable]
+            all_scores = [all_scores[i] for i in usable]
+            all_censoring = [all_censoring[i] for i in usable]
+            if len(x_list) < 2:
+                raise ValueError("Fewer than two completed Stack initialization pairs; stopping within the requested budget")
+
         if not x_list:
             raise ValueError("No valid Stack initialization points found")
 
@@ -309,6 +318,10 @@ class AdversarialQueryOptimization(Optimize):
         censoring = []
 
         for row in init_rows:
+            if (self.schema == 'Stack' and self.task_id == 'adversarial_query_abs'
+                    and os.environ.get('ADVQ_COMPLETE_PAIRS_ONLY', '1') == '1'
+                    and (row['default_status'], row['generated_status']) != ('complete', 'complete')):
+                continue
             plan_str = ','.join(map(str, row['plan']))
             combined = f"{row['query']}[SEP]{plan_str}"
             x_list.append(combined)
@@ -338,6 +351,9 @@ class AdversarialQueryOptimization(Optimize):
 
         if not x_list:
             raise ValueError(f"No valid init points found in {log_path}")
+        if (self.schema == 'Stack' and self.task_id == 'adversarial_query_abs'
+                and os.environ.get('ADVQ_COMPLETE_PAIRS_ONLY', '1') == '1' and len(x_list) < 2):
+            raise ValueError(f"Fewer than two completed initialization pairs in {log_path}")
 
         self.init_train_x = x_list
         self.num_initialization_points = len(x_list)

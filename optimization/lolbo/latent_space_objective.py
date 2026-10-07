@@ -138,7 +138,10 @@ class LatentSpaceObjective:
         #   nan scores happen when we pass an invalid
         #   molecular string and thus avoid calling the
         #   oracle entirely
-        self.num_calls += (np.logical_not(np.isnan(np.array(computed_scores)))).sum() 
+        if getattr(self.objective_function, 'count_all_oracle_attempts', False):
+            self.num_calls += len(computed_scores)
+        else:
+            self.num_calls += (np.logical_not(np.isnan(np.array(computed_scores)))).sum()
 
         scores_arr = np.array(scores)
         censoring_arr = np.array(censoring)
