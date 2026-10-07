@@ -626,9 +626,13 @@ run_python(
 )
 health_url = "http://" + "127.0.0.1:8000/health"
 models_url = "http://" + "127.0.0.1:8000/v1/models"
-server_revision = "v0-processor-2"
+import hashlib
+server_revision = hashlib.sha256(
+    (REPO / "optimization/query_inference/v0_constraint.py").read_bytes()
+    + (REPO / "optimization/query_inference/vllm_compat.py").read_bytes()
+).hexdigest()
 revision_file = Path("/content/vllm-stack-revision.txt")
-if http_healthy(health_url) and process_alive(VLLM_PID):
+if process_alive(VLLM_PID):
     import signal
     server_pid = int(VLLM_PID.read_text().strip())
     command_line = Path(f"/proc/{server_pid}/cmdline").read_bytes().split(b"\0")

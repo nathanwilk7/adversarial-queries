@@ -25,6 +25,7 @@ class StackGrammarProcessor:
         self.matcher = None
         self.processed = []
         self.mask = None
+        self.stop_token = None
 
     def __deepcopy__(self, memo):
         return type(self)(self.grammar)
@@ -43,9 +44,23 @@ class StackGrammarProcessor:
         if list(token_ids[:len(self.processed)]) != self.processed:
             raise RuntimeError('Grammar processor received non-monotonic token history')
         for token in token_ids[len(self.processed):]:
+            if self.stop_token is not None:
+                if token != self.stop_token:
+                    raise RuntimeError('Received a non-stop token after grammar termination')
+                self.processed.append(token)
+                continue
             if not self.matcher.accept_token(token):
                 raise RuntimeError(f'Grammar rejected generated token {token}')
             self.processed.append(token)
+            if self.matcher.is_terminated():
+                self.stop_token = token
+        if self.stop_token is not None:
+            # V0's async sampler may call again before the output processor
+            # retires this sequence. XGrammar cannot fill masks after EOS.
+            # Keep such extra samples at EOS without advancing the matcher.
+            logits.fill_(float('-inf'))
+            logits[self.stop_token] = 0
+            return logits
         self.matcher.fill_next_token_bitmask(self.mask)
         xgr.apply_token_bitmask_inplace(logits.unsqueeze(0), self.mask.to(logits.device))
         return logits

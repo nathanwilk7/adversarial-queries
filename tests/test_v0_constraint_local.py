@@ -12,6 +12,7 @@ import os
 from pathlib import Path
 import sys
 import unittest
+from concurrent.futures import ThreadPoolExecutor
 
 import torch
 from transformers import AutoTokenizer, AutoConfig
@@ -78,6 +79,39 @@ class DecoderTests(unittest.TestCase):
                 history.append(token)
             self.assertTrue(torch.isfinite(self.step(p, history)[self.tokenizer.eos_token_id]))
             self.parser.parse(self.tokenizer.decode(history))
+
+    def test_async_calls_after_eos(self):
+        # V0's asynchronous output processing can sample again before the
+        # completed sequence is removed. Include EOS in the next input history.
+        p = processor.StackGrammarProcessor('root ::= "(answer )(question )"')
+        history = self.tokenizer.encode('(answer )(question )', add_special_tokens=False)
+        self.step(p, history)
+        history.append(self.tokenizer.eos_token_id)
+        for _ in range(3):
+            logits = self.step(p, history)
+            allowed = torch.isfinite(logits).nonzero().flatten().tolist()
+            self.assertEqual(allowed, [self.tokenizer.eos_token_id])
+            # Duplicate scheduler callbacks must be idempotent too.
+            self.assertTrue(torch.equal(logits, self.step(p, history)))
+            history.append(self.tokenizer.eos_token_id)
+
+    def test_concurrent_sequences_through_termination(self):
+        grammar = 'root ::= "(answer )(question )"'
+        processor._compiled(grammar, self.vocab_size)
+        tokens = self.tokenizer.encode('(answer )(question )', add_special_tokens=False)
+
+        def decode(_):
+            p = processor.StackGrammarProcessor(grammar)
+            history = []
+            for token in tokens + [self.tokenizer.eos_token_id] * 3:
+                logits = self.step(p, history, token)
+                self.assertTrue(torch.isfinite(logits[token]))
+                history.append(token)
+            logits = self.step(p, history)
+            self.assertEqual(torch.isfinite(logits).nonzero().flatten().tolist(), [self.tokenizer.eos_token_id])
+
+        with ThreadPoolExecutor(max_workers=8) as executor:
+            list(executor.map(decode, range(40)))
 
     def test_invalid_outputs_are_blocked(self):
         for query in ['(_answer )(badge )', '(answer (score != median)(deletion_date t< last))', '(question (view_count = median)(creation_date t> first))']:

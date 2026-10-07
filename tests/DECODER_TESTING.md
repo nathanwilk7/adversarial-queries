@@ -21,6 +21,11 @@ exact-output generation, valid queries and EOS, malformed log examples, random
 logits, request cloning/serialization, and pristine/previously patched source
 migration. The source repair is idempotent and rejects unexpected source.
 
+Post-EOS scheduler callbacks are included: they reproduced the actual native
+`GrammarMatcher has terminated ... next token mask` crash before its fix.
+Tests also exercise duplicate callbacks and 40 concurrent sequence lifecycles
+through EOS using the real matcher and upstream dispatch function.
+
 These tests do not run the vLLM HTTP server, CUDA kernels, trained model or
 database. Colab retains the exact-output canary, 40-output grammar preflight,
 and strict BO validation to cover that remaining integration boundary.
