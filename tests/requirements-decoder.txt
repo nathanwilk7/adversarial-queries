@@ -1,0 +1,4 @@
+torch==2.7.1
+transformers==4.55.0
+xgrammar==0.1.21
+lark==1.2.2

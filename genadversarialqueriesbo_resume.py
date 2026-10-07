@@ -168,6 +168,9 @@ def process_alive(pid_path: Path) -> bool:
     try:
         pid = int(pid_path.read_text().strip())
         os.kill(pid, 0)
+        status = Path(f"/proc/{pid}/status")
+        if status.exists() and any(line.startswith("State:") and "Z" in line for line in status.read_text().splitlines()):
+            return False
         return True
     except (ValueError, ProcessLookupError, PermissionError):
         return False
@@ -199,6 +202,8 @@ def runtime_dependencies_ready() -> bool:
                 "import accelerate, botorch, duckdb, gpytorch, lark, lightning, loguru, matplotlib, "
                 "networkx, openai, pandas, psycopg, pyarrow, pydantic, pydot, "
                 "sqlglot, torch, transformers, vllm; "
+                "from importlib.metadata import version; "
+                "assert version('xgrammar') == '0.1.21'; "
                 "assert transformers.__version__ == '4.55.0'; "
                 "assert vllm.__version__ == '0.10.1'; "
                 "assert duckdb.__version__ == '1.3.2'; "
@@ -354,6 +359,7 @@ else:
 # Transformers after resolution so vLLM does not pick an incompatible 5.x.
 packages = [
     "vllm==0.10.1",
+    "xgrammar==0.1.21",
     # vLLM 0.10.1 requires >=4.55.0. Pin the first compatible 4.x release;
     # Transformers 5.x removes tokenizer properties used by this vLLM build.
     "transformers==4.55.0",
@@ -602,39 +608,35 @@ run_python(
 
 section("6. Start vLLM")
 # vLLM 0.10.1 retained the V0 custom-processor execution code, but its
-# multi-step rejection lost the scheduler condition. Restore that condition
-# only for this exact pinned source; fail if upstream code differs.
+# obsolete multi-step rejection remains after multi-step scheduling was removed.
+# Remove only that exact rejection; fail if upstream code differs.
 run_python(
     r'''
     from pathlib import Path
     import vllm
+    from optimization.query_inference.vllm_compat import repair_v0_source
     assert vllm.__version__ == "0.10.1"
     engine = Path(vllm.__file__).parent / "engine/llm_engine.py"
     source = engine.read_text()
-    old = "if isinstance(params, SamplingParams) \\\n            and params.logits_processors:"
-    new = "if isinstance(params, SamplingParams) \\\n            and params.logits_processors \\\n            and self.scheduler_config.num_scheduler_steps > 1:"
-    if new in source:
-        print("V0 single-step processor compatibility repair already installed")
-    elif source.count(old) == 1:
-        repaired = source.replace(old, new, 1)
-        compile(repaired, str(engine), "exec")
+    repaired = repair_v0_source(source)
+    if repaired != source:
         engine.write_text(repaired)
-        print("Installed V0 single-step processor compatibility repair")
-    else:
-        raise RuntimeError("Unexpected vLLM V0 source; cannot apply compatibility repair")
+    print("V0 processor compatibility repair verified")
     '''
 )
 health_url = "http://" + "127.0.0.1:8000/health"
 models_url = "http://" + "127.0.0.1:8000/v1/models"
+server_revision = "v0-processor-2"
+revision_file = Path("/content/vllm-stack-revision.txt")
 if http_healthy(health_url) and process_alive(VLLM_PID):
     import signal
     server_pid = int(VLLM_PID.read_text().strip())
     command_line = Path(f"/proc/{server_pid}/cmdline").read_bytes().split(b"\0")
-    if b"vllm.entrypoints.openai.api_server" in command_line and (b"--logits-processor-pattern" not in command_line or b"--num-scheduler-steps" not in command_line):
+    if b"vllm.entrypoints.openai.api_server" in command_line and (not revision_file.exists() or revision_file.read_text().strip() != server_revision):
         print("Restarting the recorded vLLM server to enable explicit grammar masking")
         os.kill(server_pid, signal.SIGTERM)
         for _ in range(30):
-            if not http_healthy(health_url) and not Path(f"/proc/{server_pid}").exists():
+            if not http_healthy(health_url) and not process_alive(VLLM_PID):
                 break
             time.sleep(1)
         else:
@@ -658,8 +660,6 @@ if not http_healthy(health_url):
             "--served-model-name",
             "advq-decoder",
             "--enable-prompt-embeds",
-            "--num-scheduler-steps",
-            "1",
             "--logits-processor-pattern",
             r"^optimization\.query_inference\.v0_constraint\.StackGrammarProcessor$",
             "--guided-decoding-backend",
@@ -705,6 +705,7 @@ served_ids = [entry["id"] for entry in served["data"]]
 print("Served models:", served_ids)
 if "advq-decoder" not in served_ids:
     raise RuntimeError("Port 8000 serves the wrong model")
+revision_file.write_text(server_revision)
 
 
 section("7. Smoke-test grammar-constrained decoder inference")

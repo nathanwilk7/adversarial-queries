@@ -5,6 +5,7 @@ logits processor API is still supported. Initialize native objects lazily in
 the engine process so API-server serialization does not pickle XGrammar state.
 """
 from functools import lru_cache
+import os
 
 
 @lru_cache(maxsize=4)
@@ -12,7 +13,8 @@ def _compiled(grammar, vocab_size):
     import xgrammar as xgr
     from transformers import AutoTokenizer
     tokenizer = AutoTokenizer.from_pretrained(
-        '/content/advq-artifacts/stack-query-decoder', local_files_only=True)
+        os.environ.get('ADVQ_TOKENIZER_PATH', '/content/advq-artifacts/stack-query-decoder'),
+        local_files_only=True)
     info = xgr.TokenizerInfo.from_huggingface(tokenizer, vocab_size=vocab_size)
     return xgr.GrammarCompiler(info).compile_grammar(grammar)
 
@@ -25,6 +27,11 @@ class StackGrammarProcessor:
         self.mask = None
 
     def __deepcopy__(self, memo):
+        return type(self)(self.grammar)
+
+    def clone(self):
+        # SamplingParams.clone bypasses deepcopy for custom processors unless
+        # they implement this hook. Never share a native matcher across requests.
         return type(self)(self.grammar)
 
     def __call__(self, token_ids, logits):
