@@ -4,6 +4,7 @@ Query VAE uses a frozen LLM with 256-dim embeddings; plan VAE uses plan_vae with
 """
 
 import logging
+import os
 import numpy as np
 import torch
 from lark import Lark
@@ -207,12 +208,16 @@ class AdversarialQueryVAEObjective(LatentSpaceObjective):
         validated_queries = []
         for query in queries:
             if not query:
+                if os.environ.get("ADVQ_STRICT_DECODING") == "1":
+                    raise ValueError("Decoder returned empty output after retries; stopping BO")
                 validated_queries.append(self.fallback_query)
                 continue
             try:
                 self.query_parser.parse(query)
                 validated_queries.append(query)
             except Exception as error:
+                if os.environ.get("ADVQ_STRICT_DECODING") == "1":
+                    raise ValueError(f"Invalid decoder output after retries: {query!r}") from error
                 logger.warning(
                     "Rejected grammar-invalid decoder output %r: %s; using %r",
                     query,
